@@ -25,6 +25,8 @@
     th { font-size:.9rem; opacity:.9; }
     a.ghost { text-decoration:none; padding:10px 14px; border-radius:10px; background:#e5e7eb; color:#111; font-weight:900; }
     .pill { padding:6px 10px; border-radius:999px; background:#eef2ff; font-weight:800; }
+    .csvLoading { border-color:#1f6feb !important; background:#eaf2ff !important; }
+    #importCsvBtn:disabled { opacity:.65; cursor:not-allowed; }
   </style>
   <link rel="stylesheet" href="./theme.css" />
 </head>
@@ -136,7 +138,7 @@
           </div>
         </div>
 
-        <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
+        <div id="csvCard" class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
           <h3 style="margin-top:0;">CSV-Import Schüler</h3>
           <p class="muted" style="margin-top:0;">Spalten: <code>vorname,nachname,klasse</code> (oder mit <code>;</code> getrennt). Erste Zeile darf Header sein.</p>
           <div class="row">
@@ -796,23 +798,42 @@
 
     $("importCsvBtn").addEventListener("click", async () => {
       if (me.role !== "manager") return;
+
+      const importBtn = $("importCsvBtn");
+      const csvCard = $("csvCard");
+      if (importBtn.disabled) return;
+
       const file = $("csvFile").files?.[0];
       if (!file) return msg($("csvMsg"), false, "Bitte CSV-Datei auswählen.");
 
-      const text = await file.text();
-      const rows = parseCsvRows(text);
-      if (!rows.length) return msg($("csvMsg"), false, "Keine gültigen Datensätze gefunden. Erwartet: Vorname,Nachname,Klasse.");
+      importBtn.disabled = true;
+      importBtn.textContent = "Import läuft...";
+      csvCard?.classList.add("csvLoading");
+      msg($("csvMsg"), true, "Import läuft... bitte warten.");
 
-      let ok = 0;
-      let fail = 0;
-      for (const r of rows) {
-        const { error } = await createStudentInSchool(r.first_name, r.last_name, r.class_name);
-        if (error) fail++; else ok++;
+      try {
+        const text = await file.text();
+        const rows = parseCsvRows(text);
+        if (!rows.length) {
+          msg($("csvMsg"), false, "Keine gültigen Datensätze gefunden. Erwartet: Vorname,Nachname,Klasse.");
+          return;
+        }
+
+        let ok = 0;
+        let fail = 0;
+        for (const r of rows) {
+          const { error } = await createStudentInSchool(r.first_name, r.last_name, r.class_name);
+          if (error) fail++; else ok++;
+        }
+
+        msg($("csvMsg"), fail ? false : true, `Import fertig: ${ok} erfolgreich, ${fail} fehlgeschlagen.`);
+        await loadSchoolStudents();
+        await refreshGroupArea();
+      } finally {
+        importBtn.disabled = false;
+        importBtn.textContent = "CSV importieren";
+        csvCard?.classList.remove("csvLoading");
       }
-
-      msg($("csvMsg"), fail ? false : true, `Import fertig: ${ok} erfolgreich, ${fail} fehlgeschlagen.`);
-      await loadSchoolStudents();
-      await refreshGroupArea();
     });
 
     $("mgrClassFilter").addEventListener("change", renderManagerStudents);
