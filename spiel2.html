@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Spiel 2 – Binär-Blitz</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 860px; margin:0 auto; padding:24px; }
+    header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+    h1 { margin:0; font-size:1.35rem; }
+    .card { background:#fff; border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .pill { padding:6px 10px; border-radius:999px; background:#eef2ff; font-weight:800; }
+    input[type="text"]{
+      font-size:1.05rem; padding:10px 12px; border-radius:10px; border:1px solid #ccd2e1; min-width:240px;
+    }
+    button{
+      padding:10px 14px; border-radius:10px; border:0; background:#1f6feb; color:#fff; font-weight:800; cursor:pointer;
+    }
+    button.secondary{ background:#111827; }
+    button.ghost{ background:#e5e7eb; color:#111; }
+    .feedback{ margin-top:12px; padding:12px; border-radius:10px; display:none; }
+    .ok{ background:#ecfdf5; border:1px solid #10b98144; display:block; }
+    .bad{ background:#fef2f2; border:1px solid #ef444444; display:block; }
+    .muted{ opacity:.8; }
+    code.kbd { background:#111827; color:#fff; padding:2px 6px; border-radius:6px; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Binär-Blitz ⚡ (90 Sekunden)</h1>
+      <div class="row">
+        <a class="ghost" href="./index.html" style="text-decoration:none; padding:10px 14px; border-radius:10px; background:#e5e7eb; color:#111; font-weight:800;">
+          ← Startseite
+        </a>
+      </div>
+    </header>
+
+    <div class="card" style="margin-top:14px;">
+      <p class="muted" style="margin:0 0 12px;">
+        Ziel: Löse in 90 Sekunden so viele Aufgaben wie möglich. Dezimal ↔ Binär gemischt.
+        Führende Nullen sind erlaubt (z.B. <code class="kbd">101</code> = <code class="kbd">00000101</code>).
+      </p>
+      <div class="row">
+        <label class="muted"><strong>Name:</strong></label>
+        <input id="nameInput" type="text" maxlength="20" placeholder="z.B. Alex" />
+        <button id="startBtn">Start</button>
+      </div>
+    </div>
+
+    <div class="card" id="gameCard" style="margin-top:14px; display:none;">
+      <div class="row" style="justify-content:space-between;">
+        <div class="pill">Zeit: <span id="time">90</span>s</div>
+        <div class="pill">Richtig: <span id="right">0</span></div>
+        <div class="pill">Streak: <span id="streak">0</span></div>
+      </div>
+
+      <h2 id="qText" style="margin:14px 0 10px;">…</h2>
+
+      <div class="row">
+        <input id="ans" type="text" inputmode="numeric" autocomplete="off" placeholder="Antwort…" />
+        <button id="checkBtn">OK</button>
+        <button id="stopBtn" class="secondary">Stop</button>
+      </div>
+
+      <div id="fb" class="feedback"></div>
+      <p class="muted" style="margin-top:12px;">Tipp: Binär nur 0/1, Dezimal nur Ziffern.</p>
+    </div>
+
+    <div class="card" id="resultCard" style="margin-top:14px; display:none;">
+      <h2 style="margin-top:0;">Ergebnis</h2>
+      <p id="result" style="margin:0 0 12px;"></p>
+      <div class="row">
+        <button id="againBtn">Nochmal</button>
+        <a class="ghost" href="./index.html" style="text-decoration:none; padding:10px 14px; border-radius:10px; background:#e5e7eb; color:#111; font-weight:800;">
+          ← Startseite
+        </a>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // Einfacher Aufgaben-Generator: Schwierigkeit steigt mit Streak
+  const decToBin = (n) => n.toString(2);
+  const binToDec = (b) => parseInt(b, 2);
+  const normalizeBinary = (s) => s.replace(/\s+/g, "");
+  const normalizeNumber = (s) => s.trim();
+  const isValidBinary = (s) => /^[01]+$/.test(s);
+  const isValidDecimal = (s) => /^\d+$/.test(s);
+
+  const nameInput = document.getElementById("nameInput");
+  const startBtn = document.getElementById("startBtn");
+  const gameCard = document.getElementById("gameCard");
+  const resultCard = document.getElementById("resultCard");
+  const timeEl = document.getElementById("time");
+  const rightEl = document.getElementById("right");
+  const streakEl = document.getElementById("streak");
+  const qText = document.getElementById("qText");
+  const ans = document.getElementById("ans");
+  const checkBtn = document.getElementById("checkBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  const fb = document.getElementById("fb");
+  const result = document.getElementById("result");
+  const againBtn = document.getElementById("againBtn");
+
+  let t = 90;
+  let timer = null;
+  let right = 0;
+  let streak = 0;
+  let player = "";
+  let current = null;
+
+  function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+  function makeTask() {
+    // je höher die Streak, desto größer die Zahlen / mehr Bits
+    const level = Math.min(6, Math.floor(streak / 3));
+    const mode = Math.random() < 0.5 ? "dec2bin" : "bin2dec";
+
+    if (mode === "dec2bin") {
+      const max = [15, 31, 63, 127, 255, 511, 1023][level];
+      const n = randInt(2, max);
+      return { type:"dec2bin", value:n, prompt:`Wandle ${n} in Binär um.` };
+    } else {
+      const bits = [4, 5, 6, 7, 8, 9, 10][level];
+      const n = randInt(2, Math.pow(2, bits)-1);
+      const b = decToBin(n);
+      return { type:"bin2dec", value:b, prompt:`Wandle ${b} in Dezimal um.` };
+    }
+  }
+
+  function isCorrect(task, raw){
+    if (task.type === "dec2bin") {
+      const s = normalizeBinary(raw);
+      if (!isValidBinary(s)) return { valid:false };
+      return { valid:true, ok: binToDec(s) === task.value };
+    } else {
+      const s = normalizeNumber(raw);
+      if (!isValidDecimal(s)) return { valid:false };
+      return { valid:true, ok: Number(s) === binToDec(task.value) };
+    }
+  }
+
+  function nextTask(){
+    current = makeTask();
+    qText.textContent = current.prompt;
+    ans.value = "";
+    ans.placeholder = current.type === "dec2bin" ? "Binär (0/1)…" : "Dezimal…";
+    ans.focus();
+    fb.className = "feedback";
+    fb.style.display = "none";
+  }
+
+  function tick(){
+    t -= 1;
+    timeEl.textContent = String(t);
+    if (t <= 0) end();
+  }
+
+  function start(){
+    player = nameInput.value.trim() || "Unbekannt";
+    t = 90; right = 0; streak = 0;
+
+    timeEl.textContent = "90";
+    rightEl.textContent = "0";
+    streakEl.textContent = "0";
+
+    resultCard.style.display = "none";
+    gameCard.style.display = "block";
+
+    nextTask();
+    timer = setInterval(tick, 1000);
+  }
+
+  function end(){
+    if (timer) clearInterval(timer);
+    timer = null;
+
+    gameCard.style.display = "none";
+    resultCard.style.display = "block";
+    result.textContent = `${player}: Du hast ${right} Aufgaben richtig gelöst! (Beste Streak: ${streak})`;
+  }
+
+  function check(){
+    if (!current) return;
+    const res = isCorrect(current, ans.value);
+
+    if (!res.valid) {
+      fb.className = "feedback bad";
+      fb.style.display = "block";
+      fb.innerHTML = "⚠️ Ungültige Eingabe (Binär nur 0/1, Dezimal nur Ziffern).";
+      return;
+    }
+
+    if (res.ok) {
+      right += 1;
+      streak += 1;
+      rightEl.textContent = String(right);
+      streakEl.textContent = String(streak);
+      fb.className = "feedback ok";
+      fb.style.display = "block";
+      fb.innerHTML = "✅ Richtig!";
+      nextTask();
+    } else {
+      // Streak bricht, aber Spiel läuft weiter
+      streak = 0;
+      streakEl.textContent = "0";
+      fb.className = "feedback bad";
+      fb.style.display = "block";
+      fb.innerHTML = "❌ Falsch. Nächste Aufgabe!";
+      nextTask();
+    }
+  }
+
+  startBtn.addEventListener("click", start);
+  nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") start(); });
+  checkBtn.addEventListener("click", check);
+  stopBtn.addEventListener("click", end);
+  againBtn.addEventListener("click", start);
+  ans.addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+})();
+</script>
+</body>
+</html>
+

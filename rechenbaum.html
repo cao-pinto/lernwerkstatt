@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rechenbaum – 5 Minuten</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 1150px; margin:0 auto; padding:24px; }
+    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+    h1 { margin:0; font-size:1.8rem; }
+    h2,h3 { margin:0 0 10px; }
+    .muted { opacity:.8; }
+    input { padding:10px 12px; border-radius:12px; border:1px solid #ccd2e1; font-size:1rem; min-width:240px; }
+    button { padding:10px 14px; border-radius:12px; border:0; background:#1f6feb; color:#fff; font-weight:900; cursor:pointer; }
+    button.ghost { background:#e5e7eb; color:#111; }
+    button.modeBtn { background:#e5e7eb; color:#111; }
+    button.modeBtn.active { background:#1f6feb; color:#fff; }
+    a.ghost { text-decoration:none; padding:10px 14px; border-radius:12px; background:#e5e7eb; color:#111; font-weight:900; }
+
+    .pill { padding:8px 12px; border-radius:999px; background:#eef2ff; font-weight:900; }
+    .ok { background:#ecfdf5; border:1px solid #10b98144; padding:10px; border-radius:12px; }
+    .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:12px; }
+    .feedback { margin-top:12px; display:none; }
+    .startBar { display:flex; justify-content:center; margin-top:14px; }
+    .startBtn { padding:14px 22px; font-size:1.1rem; border-radius:16px; }
+
+    .twoCol { display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-top:12px; }
+    @media (max-width: 900px){ .twoCol { grid-template-columns: 1fr; } }
+
+    table { width:100%; border-collapse: collapse; margin-top:10px; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid #e5e7eb; }
+    th { font-size:.9rem; opacity:.9; }
+
+    /* --- Tree --- */
+    .treeWrap{
+      position: relative;
+      background:#0b2230;
+      border-radius:18px;
+      border:1px solid #0b2230;
+      overflow:hidden;
+      padding:16px;
+      min-height: 460px;
+    }
+
+    .treeSvg{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      pointer-events:none;
+      z-index: 1;
+    }
+
+    .leaf, .node, .op{
+      position:absolute;
+      transform: translate(-50%, -50%);
+      border: 3px solid #f5c400;
+      color: #f5c400;
+      font-weight:1000;
+      box-sizing:border-box;
+      z-index: 3;
+    }
+
+    .leaf{
+      width:72px; height:42px;
+      border-radius:6px;
+      display:flex; align-items:center; justify-content:center;
+      background:#0b2230;
+      font-size:1.05rem;
+    }
+
+    .node{
+      width:96px; height:46px;
+      border-radius:6px;
+      background:#0b2230;
+      display:flex; align-items:center; justify-content:center;
+      padding:0;
+    }
+    .node input{
+      width:100%; height:100%;
+      border:0; outline:none;
+      text-align:center;
+      font-weight:1000;
+      font-size:1.05rem;
+      color:#f5c400;
+      background: transparent;
+      padding:0;
+    }
+    .node.good{ background: rgba(16,185,129,.16); }
+    .node.bad{ background: rgba(239,68,68,.16); }
+
+    .op{
+      width:44px; height:44px;
+      border-radius:999px;
+      display:flex; align-items:center; justify-content:center;
+      background:#0b2230;
+      font-size:1.25rem;
+      line-height:1;
+      z-index: 4;
+    }
+
+    .hintLine { margin-top:10px; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div>
+          <h1>Rechenbaum 🌳 (5 Minuten)</h1>
+          <div class="muted">
+            Löse in 5 Minuten so viele Rechenbäume wie möglich.
+            Keine Dezimalzahlen. (Division nur, wenn das Ergebnis ganzzahlig ist.)
+          </div>
+        </div>
+        <a class="ghost" href="./index.html">← Startseite</a>
+      </div>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2>Schüler-Code</h2>
+      <div class="row">
+        <input id="code" placeholder="Code (z.B. AB7K2)" style="text-transform:uppercase;" />
+        <button id="loginBtn">Anmelden</button>
+        <button class="ghost" id="logoutBtn" style="display:none;">Logout</button>
+      </div>
+      <div id="loginMsg" class="feedback"></div>
+      <div class="muted hintLine">Derselbe Code funktioniert auf mehreren Geräten.</div>
+    </div>
+
+    <div class="card" id="gameCard" style="display:none;">
+      <div class="row" style="justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div class="muted">Angemeldet als:</div>
+          <div style="font-weight:1000; font-size:1.2rem;" id="studentName">—</div>
+        </div>
+        <div class="row">
+          <button class="ghost" id="refreshHsBtn">↻ Highscore</button>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:space-between; margin-top:12px; margin-bottom:44px;">
+        <div class="row">
+          <button id="v10Btn" class="modeBtn active" type="button">0–10</button>
+          <button id="v100Btn" class="modeBtn" type="button">0–100</button>
+          <button id="vInt10Btn" class="modeBtn" type="button">−10…+10</button>
+          <button id="vInt100Btn" class="modeBtn" type="button">−100…+100</button>
+        </div>
+        <div class="row">
+          <span class="pill">Zeit: <span id="time">300</span>s</span>
+          <span class="pill">Bäume gelöst: <span id="trees">0</span></span>
+        </div>
+      </div>
+
+      <div class="startBar" id="startBar">
+        <button id="startBtn" class="startBtn" type="button">▶ START</button>
+      </div>
+
+      <div id="runArea" style="display:none;">
+        <div class="treeWrap" id="treeWrap">
+          <svg class="treeSvg" id="treeSvg"></svg>
+
+          <div class="leaf" id="L1"></div><div class="leaf" id="L2"></div><div class="leaf" id="L3"></div>
+          <div class="leaf" id="L4"></div><div class="leaf" id="L5"></div><div class="leaf" id="L6"></div><div class="leaf" id="L7"></div>
+
+          <div class="op" id="O1"></div><div class="op" id="O2"></div><div class="op" id="O3"></div>
+          <div class="op" id="O4"></div><div class="op" id="O5"></div><div class="op" id="O6"></div>
+
+          <div class="node" id="N1"><input inputmode="numeric" autocomplete="off" /></div>
+          <div class="node" id="N2"><input inputmode="numeric" autocomplete="off" /></div>
+          <div class="node" id="N3"><input inputmode="numeric" autocomplete="off" /></div>
+          <div class="node" id="N4"><input inputmode="numeric" autocomplete="off" /></div>
+          <div class="node" id="N5"><input inputmode="numeric" autocomplete="off" /></div>
+          <div class="node" id="N6"><input inputmode="numeric" autocomplete="off" /></div>
+        </div>
+
+        <div id="fb" class="feedback"></div>
+
+        <div class="row" style="justify-content:space-between; margin-top:12px;">
+          <div class="muted">Tipp: Du kannst die Kästchen in beliebiger Reihenfolge ausfüllen.</div>
+          <button class="ghost" id="stopBtn" type="button">Stop</button>
+        </div>
+      </div>
+
+      <div class="twoCol" style="margin-top:14px;">
+        <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+          <h3>Highscore (Top 10)</h3>
+          <div class="muted">Links: 0–10 / −10…+10 • Rechts: 0–100 / −100…+100</div>
+          <div id="hsLeft" class="muted">—</div>
+        </div>
+        <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+          <h3>Highscore (Top 10)</h3>
+          <div class="muted">Rechts-Seite</div>
+          <div id="hsRight" class="muted">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://dnlencbwbbriijmzijci.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_G8SaY8-oyn7TcP-uH6neuA_PNqUR1x0";
+
+    const FN_STUDENT_LOGIN = "https://dnlencbwbbriijmzijci.functions.supabase.co/student_login";
+    const FN_GET_HIGHSCORES_TREE = "https://dnlencbwbbriijmzijci.functions.supabase.co/get_highscores_tree";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const $ = (id) => document.getElementById(id);
+
+    function dedupeBestByName(list, scoreKeyCandidates = ["correct","score","correct_count","trees"]) {
+      const best = new Map(); // name -> {name, score}
+      for (const r of (list || [])) {
+        const name = String(r?.name ?? r?.display_name ?? "—");
+        let score = 0;
+        for (const k of scoreKeyCandidates) {
+          if (r != null && r[k] != null && !Number.isNaN(Number(r[k]))) { score = Number(r[k]); break; }
+        }
+        const prev = best.get(name);
+        if (!prev || score > prev.score) best.set(name, { name, score });
+      }
+      return Array.from(best.values())
+        .sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name))
+        .slice(0,10);
+    }
+    const DURATION = 300;
+
+    let studentId = null;
+    let variant = "tree10"; // tree10 | tree100 | treeInt10 | treeInt100
+
+    let timer = null;
+    let t = DURATION;
+    let solved = 0;
+
+    const templates = [
+      {
+        pos: {
+          L1:[10,12], L2:[26,12], L3:[38,12], L4:[52,12], L5:[66,12], L6:[76,12], L7:[90,12],
+          O1:[32,27], N1:[32,38],
+          O2:[71,27], N2:[71,38],
+          O3:[58,42], N3:[58,53],
+          O4:[77,60], N4:[77,71],
+          O5:[18,58], N5:[18,69],
+          O6:[50,78], N6:[50,89],
+        },
+        lines: [
+          ["L2","O1"],["L3","O1"],["O1","N1"],
+          ["L5","O2"],["L6","O2"],["O2","N2"],
+          ["L4","O3"],["N2","O3"],["O3","N3"],
+          ["N3","O4"],["L7","O4"],["O4","N4"],
+          ["L1","O5"],["N1","O5"],["O5","N5"],
+          ["N5","O6"],["N4","O6"],["O6","N6"],
+        ],
+        plan: (L, ops, compute) => {
+          const r1 = compute(L[1], L[2], ops[0]); if (r1==null) return null;
+          const r2 = compute(L[4], L[5], ops[1]); if (r2==null) return null;
+          const r3 = compute(L[3], r2,   ops[2]); if (r3==null) return null;
+          const r4 = compute(r3,   L[6], ops[3]); if (r4==null) return null;
+          const r5 = compute(L[0], r1,   ops[4]); if (r5==null) return null;
+          const r6 = compute(r5,   r4,   ops[5]); if (r6==null) return null;
+          return [r1,r2,r3,r4,r5,r6];
+        }
+      },
+      {
+        pos: {
+          L1:[10,12], L2:[23,12], L3:[36,12], L4:[49,12], L5:[62,12], L6:[75,12], L7:[90,12],
+          O1:[16,27], N1:[16,38],
+          O2:[42,27], N2:[42,38],
+          O3:[28,44], N3:[28,56],
+          O4:[68,27], N4:[68,38],
+          O5:[80,44], N5:[80,56],
+          O6:[54,72], N6:[54,86],
+        },
+        lines: [
+          ["L1","O1"],["L2","O1"],["O1","N1"],
+          ["L3","O2"],["L4","O2"],["O2","N2"],
+          ["N1","O3"],["N2","O3"],["O3","N3"],
+          ["L5","O4"],["L6","O4"],["O4","N4"],
+          ["N4","O5"],["L7","O5"],["O5","N5"],
+          ["N3","O6"],["N5","O6"],["O6","N6"],
+        ],
+        plan: (L, ops, compute) => {
+          const r1 = compute(L[0], L[1], ops[0]); if (r1==null) return null;
+          const r2 = compute(L[2], L[3], ops[1]); if (r2==null) return null;
+          const r3 = compute(r1,   r2,   ops[2]); if (r3==null) return null;
+          const r4 = compute(L[4], L[5], ops[3]); if (r4==null) return null;
+          const r5 = compute(r4,   L[6], ops[4]); if (r5==null) return null;
+          const r6 = compute(r3,   r5,   ops[5]); if (r6==null) return null;
+          return [r1,r2,r3,r4,r5,r6];
+        }
+      },
+      {
+        pos: {
+          L1:[10,12], L2:[26,12], L3:[42,12], L4:[58,12], L5:[74,12], L6:[86,12], L7:[94,22],
+          O1:[34,27], N1:[34,38],
+          O2:[50,42], N2:[50,54],
+          O3:[80,27], N3:[80,38],
+          O4:[72,50], N4:[72,62],
+          O5:[22,58], N5:[22,70],
+          O6:[48,78], N6:[48,89],
+        },
+        lines: [
+          ["L2","O1"],["L3","O1"],["O1","N1"],
+          ["N1","O2"],["L4","O2"],["O2","N2"],
+          ["L5","O3"],["L6","O3"],["O3","N3"],
+          ["N3","O4"],["L7","O4"],["O4","N4"],
+          ["L1","O5"],["N2","O5"],["O5","N5"],
+          ["N5","O6"],["N4","O6"],["O6","N6"],
+        ],
+        plan: (L, ops, compute) => {
+          const r1 = compute(L[1], L[2], ops[0]); if (r1==null) return null;
+          const r2 = compute(r1,   L[3], ops[1]); if (r2==null) return null;
+          const r3 = compute(L[4], L[5], ops[2]); if (r3==null) return null;
+          const r4 = compute(r3,   L[6], ops[3]); if (r4==null) return null;
+          const r5 = compute(L[0], r2,   ops[4]); if (r5==null) return null;
+          const r6 = compute(r5,   r4,   ops[5]); if (r6==null) return null;
+          return [r1,r2,r3,r4,r5,r6];
+        }
+      }
+    ];
+
+    let tpl = templates[0];
+
+    function setVariant(v){
+      variant = v;
+      $("v10Btn").classList.toggle("active", v === "tree10");
+      $("v100Btn").classList.toggle("active", v === "tree100");
+      $("vInt10Btn").classList.toggle("active", v === "treeInt10");
+      $("vInt100Btn").classList.toggle("active", v === "treeInt100");
+    }
+
+    function showMsg(el, ok, text) {
+      el.style.display = "block";
+      el.className = "feedback " + (ok ? "ok" : "bad");
+      el.innerHTML = text;
+    }
+
+    function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+    function pickOp(){
+      const r = Math.random();
+      if (r < 0.40) return "+";
+      if (r < 0.75) return "-";
+      if (r < 0.90) return "×";
+      return "÷";
+    }
+
+    function computeValid(a,b,op){
+      if (op === "+") return a + b;
+      if (op === "×") return a * b;
+      if (op === "-") return a - b; // bei Integer-Varianten ok, bei Natur-Varianten prüfen wir extra
+      if (op === "÷") {
+        if (b === 0) return null;
+        if (a % b !== 0) return null;
+        return a / b;
+      }
+      return null;
+    }
+
+    function isNaturalVariant(){
+      return variant === "tree10" || variant === "tree100";
+    }
+
+    function capsOk(values){
+      // values = [r1..r6]
+      if (variant === "tree10"){
+        const maxMid = 100, maxEnd = 200;
+        for (let i=0;i<values.length;i++){
+          const v = values[i];
+          if (v == null) return false;
+          if (v < 0) return false;
+          if (i < values.length-1 && v > maxMid) return false;
+          if (i === values.length-1 && v > maxEnd) return false;
+        }
+        return true;
+      }
+      if (variant === "treeInt10"){
+        // Kopfrechen-Integer: Ergebnisse nicht zu groß im Betrag
+        const maxAbsMid = 120, maxAbsEnd = 250;
+        for (let i=0;i<values.length;i++){
+          const v = values[i];
+          if (v == null) return false;
+          if (i < values.length-1 && Math.abs(v) > maxAbsMid) return false;
+          if (i === values.length-1 && Math.abs(v) > maxAbsEnd) return false;
+        }
+        return true;
+      }
+      if (variant === "tree100"){
+        return values.every(v => v != null && v >= 0 && v <= 99999);
+      }
+      // treeInt100
+      return values.every(v => v != null && Math.abs(v) <= 99999);
+    }
+
+    function leavesRange(){
+      if (variant === "tree10") return { min:0, max:10 };
+      if (variant === "tree100") return { min:0, max:100 };
+      if (variant === "treeInt10") return { min:-10, max:10 };
+      return { min:-100, max:100 };
+    }
+
+    function generateTree(){
+      const { min, max } = leavesRange();
+
+      for (let attempt=0; attempt<6000; attempt++){
+        tpl = templates[randInt(0, templates.length-1)];
+        const L = Array.from({length:7}, () => randInt(min, max));
+        const ops = Array.from({length:6}, () => pickOp());
+
+        const R = tpl.plan(L, ops, computeValid);
+        if (!R) continue;
+
+        // Natur-Varianten: keine negativen Zwischen-/Endwerte
+        if (isNaturalVariant() && R.some(v => v < 0)) continue;
+
+        // Keine Dezimalzahlen: durch computeValid bereits gesichert
+        if (!capsOk(R)) continue;
+
+        // optional: nicht alles null
+        if ((variant === "tree10" || variant === "treeInt10") && R.filter(x=>x!==0).length < 2) continue;
+
+        return { L, ops, R };
+      }
+
+      return { L:[2,8,4,6,9,3,5], ops:["÷","+","×","-","+","÷"], R:[2,12,72,67,4,0] };
+    }
+
+    function place(el, key){
+      const [x,y] = tpl.pos[key];
+      el.style.left = x + "%";
+      el.style.top  = y + "%";
+    }
+
+    function shrinkSegment(p1, p2, pad1, pad2){
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const len = Math.hypot(dx,dy);
+      if (len < 0.001) return { a:p1, b:p2 };
+      const ux = dx / len;
+      const uy = dy / len;
+      return {
+        a: { x: p1.x + ux * pad1, y: p1.y + uy * pad1 },
+        b: { x: p2.x - ux * pad2, y: p2.y - uy * pad2 }
+      };
+    }
+
+    function padFor(id){
+      if (id.startsWith("O")) return 24;
+      return 10;
+    }
+
+    function drawLines(){
+      const svg = $("treeSvg");
+      svg.innerHTML = "";
+
+      const wrap = $("treeWrap");
+      const rect = wrap.getBoundingClientRect();
+
+      function centerOf(id){
+        const el = $(id);
+        const r = el.getBoundingClientRect();
+        return { x:(r.left + r.width/2) - rect.left, y:(r.top + r.height/2) - rect.top };
+      }
+
+      function line(from, to){
+        const p1 = centerOf(from);
+        const p2 = centerOf(to);
+        const seg = shrinkSegment(p1, p2, padFor(from), padFor(to));
+
+        const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        l.setAttribute("x1", seg.a.x);
+        l.setAttribute("y1", seg.a.y);
+        l.setAttribute("x2", seg.b.x);
+        l.setAttribute("y2", seg.b.y);
+        l.setAttribute("stroke", "#f5c400");
+        l.setAttribute("stroke-width", "3");
+        l.setAttribute("stroke-linecap", "round");
+        svg.appendChild(l);
+      }
+
+      for (const [a,b] of tpl.lines) line(a,b);
+    }
+
+    let current = null;
+    let nodeCorrect = [false,false,false,false,false,false];
+
+    function clearInputs(){
+      nodeCorrect = [false,false,false,false,false,false];
+      for (let i=1;i<=6;i++){
+        const box = $("N"+i);
+        const inp = box.querySelector("input");
+        inp.value = "";
+        box.classList.remove("good","bad");
+      }
+    }
+
+    function renderTree(){
+      const ids = ["L1","L2","L3","L4","L5","L6","L7","O1","O2","O3","O4","O5","O6","N1","N2","N3","N4","N5","N6"];
+      ids.forEach(id => place($(id), id));
+
+      current.L.forEach((v, idx) => $("L"+(idx+1)).textContent = v);
+      current.ops.forEach((op, idx) => $("O"+(idx+1)).textContent = op);
+
+      clearInputs();
+      drawLines();
+      attachInputHandlers();
+      $("fb").style.display="none";
+    }
+
+    function attachInputHandlers(){
+      for (let i=1;i<=6;i++){
+        const box = $("N"+i);
+        const inp = box.querySelector("input");
+        inp.oninput = () => validateNode(i);
+        inp.onkeydown = (e) => { if (e.key === "Enter") e.preventDefault(); };
+      }
+      $("N1").querySelector("input").focus();
+    }
+
+    function validateNode(i){
+      const correctVal = current.R[i-1];
+      const box = $("N"+i);
+      const inp = box.querySelector("input");
+      const raw = inp.value.trim();
+
+      // allow negatives for integer variants
+      const isInt = (variant === "treeInt10" || variant === "treeInt100");
+      const re = isInt ? /^-?\d+$/ : /^\d+$/;
+
+      if (!re.test(raw)) {
+        nodeCorrect[i-1] = false;
+        box.classList.remove("good");
+        if (raw.length) box.classList.add("bad"); else box.classList.remove("bad");
+        return;
+      }
+
+      const val = Number(raw);
+      if (val === correctVal) {
+        nodeCorrect[i-1] = true;
+        box.classList.add("good");
+        box.classList.remove("bad");
+      } else {
+        nodeCorrect[i-1] = false;
+        box.classList.remove("good");
+        box.classList.add("bad");
+      }
+
+      if (nodeCorrect.every(Boolean)) {
+        solved++;
+        $("trees").textContent = String(solved);
+        showMsg($("fb"), true, `✅ Baum gelöst! Nächster Baum…`);
+        setTimeout(() => {
+          current = generateTree();
+          renderTree();
+        }, 360);
+      }
+    }
+
+    function tick(){
+      t -= 1;
+      $("time").textContent = String(t);
+      if (t <= 0) stop();
+    }
+
+    async function start(){
+      solved = 0;
+      $("trees").textContent = "0";
+      t = DURATION;
+      $("time").textContent = String(t);
+
+      $("startBar").style.display = "none";
+      $("runArea").style.display = "block";
+
+      current = generateTree();
+      renderTree();
+
+      if (timer) clearInterval(timer);
+      timer = setInterval(tick, 1000);
+    }
+
+    async function stop(){
+      if (timer) clearInterval(timer);
+      timer = null;
+
+      $("runArea").style.display = "none";
+      $("startBar").style.display = "flex";
+
+      // accuracy NOT NULL in DB
+      const accuracy = solved > 0 ? 1 : 0;
+
+      const { error } = await supabase.from("attempts").insert({
+        game: "tree",
+        student_id: studentId,
+        mode: variant,
+        correct_count: solved,
+        wrong_count: 0,
+        total_count: solved,
+        accuracy: accuracy,
+        duration_seconds: DURATION
+      });
+
+      if (error) {
+        showMsg($("loginMsg"), false, `Speichern fehlgeschlagen: ${error.message}`);
+      } else {
+        showMsg($("loginMsg"), true, `✅ Gespeichert: <strong>${solved}</strong> gelöste Bäume (${variantLabel(variant)})`);
+      }
+
+      await loadHighscores();
+    }
+
+    function variantLabel(v){
+      if (v==="tree10") return "0–10";
+      if (v==="tree100") return "0–100";
+      if (v==="treeInt10") return "−10…+10";
+      return "−100…+100";
+    }
+
+    function renderHSBox(title, list){
+      if (!list || !list.length) return `<div class="muted"><strong>${title}</strong><br/>Noch keine Einträge.</div>`;
+      return `
+        <div style="margin-top:10px;">
+          <div style="font-weight:1000;">${title}</div>
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Bäume</th></tr></thead>
+            <tbody>
+              ${list.map((r,i)=>`
+                <tr>
+                  <td class="muted">${i+1}</td>
+                  <td><strong>${String(r.name || "—")}</strong></td>
+                  <td>${Number(r.trees || 0)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function loadHighscores(){
+      $("hsLeft").textContent = "Lade…";
+      $("hsRight").textContent = "Lade…";
+      try{
+        const res = await fetch(FN_GET_HIGHSCORES_TREE, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY },
+          body: JSON.stringify({})
+        });
+
+        const text = await res.text();
+        let json = null;
+        try { json = JSON.parse(text); } catch {}
+
+        if (!res.ok || !json?.ok){
+          $("hsLeft").innerHTML = `<div class="bad">Highscore-Fehler</div>`;
+          $("hsRight").innerHTML = `<div class="bad">Highscore-Fehler</div>`;
+          return;
+        }
+
+        // ✅ Mini-Filter: pro Name nur die beste Leistung (Top 10)
+        const v10 = dedupeBestByName(json.v10, ["trees","correct","score","correct_count"])
+          .map(x => ({ name: x.name, trees: x.score }));
+        const v100 = dedupeBestByName(json.v100, ["trees","correct","score","correct_count"])
+          .map(x => ({ name: x.name, trees: x.score }));
+        const vInt10 = dedupeBestByName(json.vInt10, ["trees","correct","score","correct_count"])
+          .map(x => ({ name: x.name, trees: x.score }));
+        const vInt100 = dedupeBestByName(json.vInt100, ["trees","correct","score","correct_count"])
+          .map(x => ({ name: x.name, trees: x.score }));
+
+        $("hsLeft").innerHTML =
+          renderHSBox("0–10", v10) +
+          renderHSBox("−10…+10", vInt10);
+
+        $("hsRight").innerHTML =
+          renderHSBox("0–100", v100) +
+          renderHSBox("−100…+100", vInt100);
+
+      } catch {
+        $("hsLeft").innerHTML = `<div class="bad">Netzwerkfehler</div>`;
+        $("hsRight").innerHTML = `<div class="bad">Netzwerkfehler</div>`;
+      }
+    }
+
+    async function codeLogin(){
+      const code = $("code").value.trim().toUpperCase();
+      if (!code) { showMsg($("loginMsg"), false, "Bitte Code eingeben."); return; }
+
+      try {
+        const res = await fetch(FN_STUDENT_LOGIN, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY },
+          body: JSON.stringify({ code })
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          showMsg($("loginMsg"), false, `❌ ${json.error || "Fehler"}${json.details ? " – " + json.details : ""}`);
+          return;
+        }
+
+        const email = json.email;
+        studentId = json.student.id;
+        $("studentName").textContent = json.student.display_name;
+
+        const { error: signErr } = await supabase.auth.signInWithPassword({ email, password: code });
+        if (signErr) {
+          showMsg($("loginMsg"), false, `Login fehlgeschlagen: ${signErr.message}`);
+          return;
+        }
+
+        $("logoutBtn").style.display = "inline-block";
+        $("gameCard").style.display = "block";
+        $("startBar").style.display = "flex";
+        $("runArea").style.display = "none";
+
+        showMsg($("loginMsg"), true, `✅ Willkommen, <strong>${json.student.display_name}</strong>!`);
+        await loadHighscores();
+      } catch (e) {
+        showMsg($("loginMsg"), false, `Netzwerkfehler: ${String(e)}`);
+      }
+    }
+
+    async function logout(){
+      studentId = null;
+      $("logoutBtn").style.display = "none";
+      $("gameCard").style.display = "none";
+      await supabase.auth.signOut();
+      showMsg($("loginMsg"), true, "Abgemeldet.");
+    }
+
+    $("loginBtn").addEventListener("click", codeLogin);
+    $("code").addEventListener("keydown", (e)=>{ if(e.key==="Enter") codeLogin(); });
+    $("logoutBtn").addEventListener("click", logout);
+
+    $("v10Btn").addEventListener("click", ()=> setVariant("tree10"));
+    $("v100Btn").addEventListener("click", ()=> setVariant("tree100"));
+    $("vInt10Btn").addEventListener("click", ()=> setVariant("treeInt10"));
+    $("vInt100Btn").addEventListener("click", ()=> setVariant("treeInt100"));
+
+    $("startBtn").addEventListener("click", start);
+    $("stopBtn").addEventListener("click", stop);
+    $("refreshHsBtn").addEventListener("click", loadHighscores);
+
+    window.addEventListener("resize", ()=> { if ($("runArea").style.display !== "none") drawLines(); });
+
+    setVariant("tree10");
+  </script>
+</body>
+</html>

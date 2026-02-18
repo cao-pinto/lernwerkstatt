@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin – Schulen & DLM</title>
+  <style>
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 1100px; margin:0 auto; padding:24px; }
+    .card { background:#fff; border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+    @media (max-width: 900px){ .grid2 { grid-template-columns: 1fr; } }
+    input, select { padding:10px 12px; border-radius:10px; border:1px solid #ccd2e1; font-size:1rem; min-width:220px; }
+    button { padding:10px 14px; border-radius:10px; border:0; background:#1f6feb; color:#fff; font-weight:900; cursor:pointer; }
+    button.ghost { background:#e5e7eb; color:#111; }
+    .muted { opacity:.8; }
+    .ok { background:#ecfdf5; border:1px solid #10b98144; padding:10px; border-radius:10px; }
+    .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:10px; }
+    table { width:100%; border-collapse: collapse; margin-top:10px; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid #e5e7eb; vertical-align:top; }
+    th { font-size:.9rem; opacity:.9; }
+    a.ghost { text-decoration:none; padding:10px 14px; border-radius:10px; background:#e5e7eb; color:#111; font-weight:900; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h1 style="margin:0;">Admin – Schulen & Digital Learning Manager</h1>
+        <a class="ghost" href="./index.html">← Startseite</a>
+      </div>
+      <p class="muted" style="margin:10px 0 0;">
+        Admin legt Schulen an und erstellt pro Schule Digital Learning Manager (DLM).
+      </p>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2 style="margin-top:0;">Admin Login</h2>
+      <div class="row">
+        <input id="email" placeholder="Admin Email" />
+        <input id="pass" type="password" placeholder="Passwort" />
+        <button id="loginBtn">Einloggen</button>
+      </div>
+      <div id="loginMsg" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card" id="adminCard" style="display:none;">
+      <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+        <h2 style="margin:0;">Verwaltung</h2>
+        <div class="row">
+          <button class="ghost" id="refreshBtn">Aktualisieren</button>
+          <button class="ghost" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+          <h3 style="margin-top:0;">1) Schule anlegen</h3>
+          <div class="row">
+            <input id="schoolName" placeholder="Schulname (z.B. VS Musterstadt)" />
+            <button id="createSchoolBtn">Schule erstellen</button>
+          </div>
+          <div id="schoolMsg" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+          <h3 style="margin-top:0;">2) DLM anlegen</h3>
+          <div class="row">
+            <select id="schoolSelect"></select>
+            <input id="mName" placeholder="Name (z.B. Frau Huber)" />
+            <input id="mEmail" placeholder="Email" />
+            <input id="mPass" type="password" placeholder="Passwort" />
+            <button id="createManagerBtn">DLM erstellen</button>
+          </div>
+          <div id="managerMsg" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
+        <h3 style="margin-top:0;">Schulen</h3>
+        <div id="schoolsList" class="muted">—</div>
+      </div>
+
+      <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
+        <h3 style="margin-top:0;">Digital Learning Manager</h3>
+        <div id="managersList" class="muted">—</div>
+      </div>
+
+      <p class="muted" style="margin-top:14px;">
+        Hinweis: Für das Erstellen/Löschen von Login-Accounts über Rollen wird eine Edge Function benötigt.
+        Diese Seite erwartet dafür <code>admin_create_manager</code>.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://dnlencbwbbriijmzijci.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_G8SaY8-oyn7TcP-uH6neuA_PNqUR1x0";
+
+    const FN_ADMIN_CREATE_MANAGER = "https://dnlencbwbbriijmzijci.functions.supabase.co/admin_create_manager";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = (id) => document.getElementById(id);
+
+    const loginCard = $("loginCard");
+    const adminCard = $("adminCard");
+    const loginMsg = $("loginMsg");
+    const schoolMsg = $("schoolMsg");
+    const managerMsg = $("managerMsg");
+
+    function msg(el, ok, text) {
+      el.innerHTML = `<div class="${ok ? "ok" : "bad"}">${text}</div>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    async function apiJson(url, token, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "apikey": SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(body)
+      });
+
+      const text = await res.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch {}
+
+      if (!res.ok) {
+        throw new Error((json && (json.error || json.message || json.details)) || text || `HTTP ${res.status}`);
+      }
+      return json || {};
+    }
+
+    async function ensureSessionUI() {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        loginCard.style.display = "none";
+        adminCard.style.display = "block";
+        await refreshAll();
+      } else {
+        loginCard.style.display = "block";
+        adminCard.style.display = "none";
+      }
+    }
+
+    async function loadSchools() {
+      $("schoolsList").textContent = "Lade…";
+
+      const [{ data: schools, error: schoolsErr }, { data: teachers }, { data: students }] = await Promise.all([
+        supabase.from("schools").select("id,name,created_at").order("name", { ascending: true }),
+        supabase.from("teachers").select("id,school_id,role"),
+        supabase.from("students").select("id,school_id")
+      ]);
+
+      if (schoolsErr) {
+        $("schoolsList").innerHTML = `<div class="bad">Fehler: ${escapeHtml(schoolsErr.message)}</div>`;
+        return;
+      }
+
+      const schoolRows = schools || [];
+      const teachersBySchool = new Map();
+      const managersBySchool = new Map();
+      const studentsBySchool = new Map();
+
+      for (const t of (teachers || [])) {
+        teachersBySchool.set(t.school_id, (teachersBySchool.get(t.school_id) || 0) + (t.role === "teacher" ? 1 : 0));
+        managersBySchool.set(t.school_id, (managersBySchool.get(t.school_id) || 0) + (t.role === "manager" ? 1 : 0));
+      }
+      for (const s of (students || [])) {
+        studentsBySchool.set(s.school_id, (studentsBySchool.get(s.school_id) || 0) + 1);
+      }
+
+      $("schoolSelect").innerHTML = schoolRows.length
+        ? schoolRows.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("")
+        : `<option value="">(keine Schulen)</option>`;
+
+      if (!schoolRows.length) {
+        $("schoolsList").innerHTML = `<div class="muted">Noch keine Schulen.</div>`;
+        return;
+      }
+
+      $("schoolsList").innerHTML = `
+        <table>
+          <thead><tr><th>Schule</th><th>DLM</th><th>Lehrer</th><th>Schüler</th><th>Erstellt</th></tr></thead>
+          <tbody>
+            ${schoolRows.map(s => {
+              const d = new Date(s.created_at).toLocaleString("de-AT");
+              return `<tr>
+                <td><strong>${escapeHtml(s.name)}</strong></td>
+                <td>${managersBySchool.get(s.id) || 0}</td>
+                <td>${teachersBySchool.get(s.id) || 0}</td>
+                <td>${studentsBySchool.get(s.id) || 0}</td>
+                <td class="muted">${d}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadManagers() {
+      $("managersList").textContent = "Lade…";
+
+      const [{ data: managers, error }, { data: schools }] = await Promise.all([
+        supabase.from("teachers").select("id,display_name,school_id,created_at,role").eq("role", "manager").order("created_at", { ascending: false }),
+        supabase.from("schools").select("id,name")
+      ]);
+
+      if (error) {
+        $("managersList").innerHTML = `<div class="bad">Fehler: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      const schoolName = new Map((schools || []).map(s => [s.id, s.name]));
+      const list = managers || [];
+
+      if (!list.length) {
+        $("managersList").innerHTML = `<div class="muted">Noch keine DLM angelegt.</div>`;
+        return;
+      }
+
+      $("managersList").innerHTML = `
+        <table>
+          <thead><tr><th>Name</th><th>Schule</th><th>Rolle</th><th>Erstellt</th></tr></thead>
+          <tbody>
+            ${list.map(m => {
+              const d = new Date(m.created_at).toLocaleString("de-AT");
+              return `<tr>
+                <td><strong>${escapeHtml(m.display_name || "—")}</strong></td>
+                <td>${escapeHtml(schoolName.get(m.school_id) || "—")}</td>
+                <td>${escapeHtml(m.role)}</td>
+                <td class="muted">${d}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function refreshAll() {
+      await Promise.all([loadSchools(), loadManagers()]);
+    }
+
+    $("loginBtn").addEventListener("click", async () => {
+      loginMsg.textContent = "";
+      const email = $("email").value.trim();
+      const password = $("pass").value.trim();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) msg(loginMsg, false, `Login fehlgeschlagen: ${escapeHtml(error.message)}`);
+      else msg(loginMsg, true, "✅ Eingeloggt.");
+      await ensureSessionUI();
+    });
+
+    $("logoutBtn").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      await ensureSessionUI();
+    });
+
+    $("refreshBtn").addEventListener("click", refreshAll);
+
+    $("createSchoolBtn").addEventListener("click", async () => {
+      schoolMsg.textContent = "";
+      const name = $("schoolName").value.trim();
+      if (!name) {
+        msg(schoolMsg, false, "Bitte Schulname eingeben.");
+        return;
+      }
+
+      const { error } = await supabase.from("schools").insert({ name });
+      if (error) msg(schoolMsg, false, `Fehler: ${escapeHtml(error.message)}`);
+      else {
+        msg(schoolMsg, true, "✅ Schule angelegt.");
+        $("schoolName").value = "";
+        await refreshAll();
+      }
+    });
+
+    $("createManagerBtn").addEventListener("click", async () => {
+      managerMsg.textContent = "";
+      const school_id = $("schoolSelect").value;
+      const display_name = $("mName").value.trim();
+      const email = $("mEmail").value.trim();
+      const password = $("mPass").value.trim();
+
+      if (!school_id || !display_name || !email || !password) {
+        msg(managerMsg, false, "Bitte Schule, Name, Email und Passwort ausfüllen.");
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        msg(managerMsg, false, "Kein Login-Token gefunden. Bitte neu einloggen.");
+        return;
+      }
+
+      try {
+        await apiJson(FN_ADMIN_CREATE_MANAGER, token, { school_id, display_name, email, password, role: "manager" });
+        msg(managerMsg, true, `✅ DLM erstellt: <strong>${escapeHtml(display_name)}</strong>`);
+        $("mName").value = "";
+        $("mEmail").value = "";
+        $("mPass").value = "";
+        await refreshAll();
+      } catch (e) {
+        msg(managerMsg, false, `Fehler: ${escapeHtml(String(e.message || e))}`);
+      }
+    });
+
+    await ensureSessionUI();
+  </script>
+</body>
+</html>

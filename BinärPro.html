@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BinärPro – Binärumwandlung</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 1150px; margin:0 auto; padding:24px; }
+    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+    h1 { margin:0; font-size:1.8rem; }
+    h2,h3 { margin:0 0 10px; }
+    .muted { opacity:.8; }
+    .pill { padding:8px 12px; border-radius:999px; background:#eef2ff; font-weight:900; }
+    input { padding:10px 12px; border-radius:12px; border:1px solid #ccd2e1; font-size:1rem; }
+    input[type="text"]{ min-width:240px; }
+    button { padding:10px 14px; border-radius:12px; border:0; background:#1f6feb; color:#fff; font-weight:900; cursor:pointer; }
+    button.ghost { background:#e5e7eb; color:#111; }
+    a.ghost { text-decoration:none; padding:10px 14px; border-radius:12px; background:#e5e7eb; color:#111; font-weight:900; }
+
+    .ok { background:#ecfdf5; border:1px solid #10b98144; padding:10px; border-radius:12px; }
+    .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:12px; }
+    .feedback { margin-top:12px; display:none; }
+
+    .quizBox{
+      background:#0b2230;
+      border-radius:18px;
+      border:1px solid #0b2230;
+      padding:18px;
+      color:#f5c400;
+    }
+    .question{
+      font-size:1.35rem;
+      font-weight:1000;
+      margin:0 0 10px;
+      color:#f5c400;
+    }
+    .answerRow input{
+      background:#0b2230;
+      color:#f5c400;
+      border:2px solid #f5c400;
+      font-weight:1000;
+      letter-spacing:.5px;
+    }
+    .answerRow input::placeholder{ color:#f5c400aa; }
+
+    .wrongInput{
+      border-color:#ef4444 !important;
+      color:#ef4444 !important;
+    }
+
+    .sideGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+      margin-top:14px;
+      align-items:start;
+    }
+    .hsCard{ order: 1; }
+    .helpCard{ order: 2; }
+
+    @media (max-width: 900px){
+      .sideGrid{ grid-template-columns: 1fr; }
+      .helpCard{ order: 1; }
+      .hsCard{ order: 2; }
+    }
+
+    table{ width:100%; border-collapse: collapse; margin-top:10px; }
+    th, td{ text-align:center; padding:8px; border:1px solid #e5e7eb; }
+    th{ background:#f3f4f6; }
+
+    .hintTableWrap{
+      overflow-x:auto;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#fff;
+    }
+    .hintTable{
+      width:100%;
+      min-width:520px;
+      border-collapse: collapse;
+      font-weight:1000;
+    }
+    .hintTable th{
+      background:#fff;
+      font-size:1.15rem;
+      padding:10px 12px;
+    }
+    .hintTable td{
+      font-size:1.1rem;
+      padding:10px 12px;
+    }
+
+    /* kleiner Abstand zwischen 8 und 16 */
+    .gapAfter8{
+      border-right-width:10px !important;
+      border-right-color:#fff !important; /* wirkt wie spacing */
+    }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .smallNote{ margin-top:10px; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div>
+          <h1>BinärPro 🔢</h1>
+          <div class="muted">
+            90 Sekunden: Dezimalzahlen ↔ Binärzahlen umwandeln. Schwierigkeit steigt langsam.
+            Bis Aufgabe 15: 8 Bit, danach: 9 Bit.
+          </div>
+        </div>
+        <a class="ghost" href="./index.html">← Startseite</a>
+      </div>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2>Schüler-Code</h2>
+      <div class="row">
+        <input id="code" placeholder="Code (z.B. AB7K2)" style="text-transform:uppercase;" />
+        <button id="loginBtn">Anmelden</button>
+        <button class="ghost" id="logoutBtn" style="display:none;">Logout</button>
+      </div>
+      <div id="loginMsg" class="feedback"></div>
+      <div class="muted smallNote">
+        Binär darfst du mit Leerzeichen gruppieren (z.B. <span class="mono">0100 1011</span>).
+        Führende Nullen sind erlaubt.
+      </div>
+    </div>
+
+    <div class="card" id="gameCard" style="display:none;">
+      <div class="row" style="justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div class="muted">Angemeldet als:</div>
+          <div style="font-weight:1000; font-size:1.2rem;" id="studentName">—</div>
+        </div>
+        <div class="row">
+          <span class="pill">Zeit: <span id="time">90</span>s</span>
+          <span class="pill">Richtig: <span id="correct">0</span></span>
+          <span class="pill">Streak: <span id="streak">0</span></span>
+          <button class="ghost" id="refreshHsBtn">↻ Highscore</button>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:center; margin-top:14px;">
+        <button id="startStopBtn" style="padding:14px 22px; font-size:1.1rem; border-radius:16px;">▶ START</button>
+      </div>
+
+      <div id="runArea" style="display:none; margin-top:14px;">
+        <div id="quizBox" class="quizBox" style="display:none;">
+          <div class="question" id="question">—</div>
+          <div class="row answerRow">
+            <input id="answer" placeholder="Antwort eingeben…" autocomplete="off" />
+            <button id="submitBtn">OK</button>
+          </div>
+          <div id="fb" class="feedback"></div>
+        </div>
+
+        <div class="sideGrid">
+          <div class="card hsCard" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+            <h3>Highscore (Top 10)</h3>
+            <div class="muted">Nach Anzahl richtiger Antworten in 90 Sekunden (beste Leistung pro Name).</div>
+            <div id="hsBox" class="muted">—</div>
+          </div>
+
+          <div class="card helpCard" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+            <h3 id="helpTitle">Hilfestellung: Stellenwerte</h3>
+
+            <div class="hintTableWrap">
+              <table class="hintTable" id="hintTable"></table>
+            </div>
+
+            <div class="muted smallNote" id="helpNote">
+              Hinweis: Führende Nullen sind erlaubt. Du darfst auch weniger Bits eingeben.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://dnlencbwbbriijmzijci.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_G8SaY8-oyn7TcP-uH6neuA_PNqUR1x0";
+
+    const FN_STUDENT_LOGIN = "https://dnlencbwbbriijmzijci.functions.supabase.co/student_login";
+    const FN_GET_HIGHSCORES_BINARY = "https://dnlencbwbbriijmzijci.functions.supabase.co/get_highscores_binary";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = (id) => document.getElementById(id);
+
+    const DURATION = 90;
+
+    let studentId = null;
+
+    let current = null;
+    let currentBits = 8;
+    let helpFrozen = false; // after question 9 freeze until bits jump
+
+    let t = DURATION;
+    let timer = null;
+    let running = false;
+
+    let correct = 0;
+    let wrong = 0;
+
+    // streak counter resets at 3 (bonus)
+    let streakCounter = 0;
+
+    let questions = 0;
+    let lastDec = null;
+
+    function showMsg(el, ok, html){
+      el.style.display = "block";
+      el.className = "feedback " + (ok ? "ok" : "bad");
+      el.innerHTML = html;
+    }
+
+    function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+    function toBin(n, bits){
+      return n.toString(2).padStart(bits, "0");
+    }
+
+    function group4(bin){
+      const s = bin.replace(/\s+/g,"");
+      let out = "";
+      for (let i=0;i<s.length;i++){
+        out += s[i];
+        const posFromEnd = s.length - i - 1;
+        if (posFromEnd % 4 === 0 && i !== s.length - 1) out += " ";
+      }
+      return out;
+    }
+
+    function normalizeBinInput(s){
+      return s.replace(/\s+/g, "");
+    }
+
+    function bitsForQuestion(q){
+      return (q <= 15) ? 8 : 9;
+    }
+
+    function maxForQuestion(q){
+      // NEW requested bands:
+      // 1-3: <8
+      // 4-6: <32
+      // 7-9: <64
+      // 10-12: <128
+      // 13-15: <256
+      if (q <= 3) return 7;
+      if (q <= 6) return 31;
+      if (q <= 9) return 63;
+      if (q <= 12) return 127;
+      if (q <= 15) return 255;
+      return null; // handled by ramp for 9-bit
+    }
+
+    function pickDecForDifficulty(q, bits){
+      const maxByBits = (1 << bits) - 1;
+
+      let max;
+      const bandMax = maxForQuestion(q);
+      if (bandMax !== null){
+        max = Math.min(bandMax, maxByBits);
+      } else {
+        // 16+: ramp 255..511 (9-bit)
+        const ramp = Math.min(1, (q - 16) / 12);
+        max = Math.round(255 + (maxByBits - 255) * ramp);
+        max = Math.min(max, maxByBits);
+      }
+
+      let dec = randInt(0, max);
+      for (let i=0;i<12 && dec === lastDec; i++){
+        dec = randInt(0, max);
+      }
+      lastDec = dec;
+      return dec;
+    }
+
+    function updateHelpTable(bits, binForRow=null){
+      const table = $("hintTable");
+      table.innerHTML = "";
+
+      const weights = [];
+      for (let i=bits-1; i>=0; i--) weights.push(1<<i);
+
+      const trH = document.createElement("tr");
+      const trB = document.createElement("tr");
+
+      // gap after 8 -> between 8 and 16 (i.e., after the "8" column)
+      // weights are in descending order; for 8-bit: [128,64,32,16,8,4,2,1]
+      // gap after 8 => after index where weight==8
+      const gapIndex = weights.findIndex(w => w === 16);
+
+
+      for (let idx=0; idx<weights.length; idx++){
+        const w = weights[idx];
+
+        const th = document.createElement("th");
+        th.textContent = String(w);
+        if (idx === gapIndex) th.classList.add("gapAfter8");
+        trH.appendChild(th);
+
+        const td = document.createElement("td");
+        if (binForRow){
+          const s = binForRow.replace(/\s+/g,"").padStart(bits,"0").slice(-bits);
+          td.textContent = s[idx];
+        } else {
+          td.textContent = "0";
+        }
+        if (idx === gapIndex) td.classList.add("gapAfter8");
+        trB.appendChild(td);
+      }
+
+      table.appendChild(trH);
+      table.appendChild(trB);
+
+      $("helpTitle").textContent = `Hilfestellung: Stellenwerte (${bits} Bit)`;
+    }
+
+    function generateQuestion(){
+      questions++;
+      const newBits = bitsForQuestion(questions);
+
+      if (newBits !== currentBits){
+        currentBits = newBits;
+        helpFrozen = false;
+        updateHelpTable(currentBits);
+        helpFrozen = true;
+      }
+
+      // NEW: tasks 1-5 always b2d
+      const type = (questions <= 5) ? "b2d" : (Math.random() < 0.5 ? "b2d" : "d2b");
+
+      const dec = pickDecForDifficulty(questions, currentBits);
+      const bin = toBin(dec, currentBits);
+
+      // binary display in question always 8-bit
+      const bin8Display = toBin(dec, 8);
+
+      return { type, dec, bin, bin8Display, bits: currentBits };
+    }
+
+    function renderQuestion(){
+      current = generateQuestion();
+
+      const ans = $("answer");
+      ans.value = "";
+      ans.classList.remove("wrongInput");
+      ans.focus();
+
+      $("fb").style.display = "none";
+
+      // HELP: show current binary row until question 9
+      if (questions <= 9){
+        updateHelpTable(8, current.bin8Display);
+        helpFrozen = false;
+      } else {
+        if (!helpFrozen){
+          updateHelpTable(currentBits);
+          helpFrozen = true;
+        }
+      }
+
+      if (current.type === "b2d"){
+        $("question").textContent = `Wandle ${group4(current.bin8Display)} ins Dezimalsystem um.`;
+        ans.placeholder = "z.B. 42";
+      } else {
+        $("question").textContent = `Wandle ${current.dec} ins Binärsystem um.`;
+        ans.placeholder = "z.B. 101 oder 0000 0101";
+      }
+    }
+
+    function tick(){
+      t -= 1;
+      $("time").textContent = String(t);
+      if (t <= 0) stopGame(true);
+    }
+
+    function addStreakSuccess(){
+      streakCounter += 1;
+      if (streakCounter >= 3){
+        streakCounter = 0;
+        t += 15;
+        $("time").textContent = String(t);
+        showMsg($("fb"), true, `🔥 Streak! <strong>+15 Sekunden</strong>`);
+      }
+      $("streak").textContent = String(streakCounter);
+    }
+
+    function resetStreak(){
+      streakCounter = 0;
+      $("streak").textContent = "0";
+    }
+
+    function showQuiz(show){
+      $("quizBox").style.display = show ? "block" : "none";
+      if (show) $("fb").style.display = "none";
+    }
+
+    function setRunningUI(isRunning){
+      running = isRunning;
+      const btn = $("startStopBtn");
+      if (isRunning){
+        btn.textContent = "Stop";
+        btn.classList.add("ghost");
+      } else {
+        btn.textContent = "▶ START";
+        btn.classList.remove("ghost");
+      }
+    }
+
+    async function startGame(){
+      correct = 0;
+      wrong = 0;
+      streakCounter = 0;
+      questions = 0;
+      lastDec = null;
+
+      t = DURATION;
+      $("time").textContent = String(t);
+      $("correct").textContent = "0";
+      $("streak").textContent = "0";
+
+      currentBits = 8;
+      helpFrozen = false;
+      updateHelpTable(8);
+
+      $("runArea").style.display = "block";
+      showQuiz(true);
+      setRunningUI(true);
+
+      renderQuestion();
+
+      if (timer) clearInterval(timer);
+      timer = setInterval(tick, 1000);
+    }
+
+    async function stopGame(timeUp=false){
+      if (timer) clearInterval(timer);
+      timer = null;
+
+      setRunningUI(false);
+      showQuiz(false);
+
+      const total = correct + wrong;
+      const accuracy = total > 0 ? (correct / total) : 0;
+
+      const { error } = await supabase.from("attempts").insert({
+        game: "binary",
+        student_id: studentId,
+        mode: "mix",
+        correct_count: correct,
+        wrong_count: wrong,
+        total_count: total,
+        accuracy: accuracy,
+        duration_seconds: DURATION
+      });
+
+      if (error){
+        showMsg($("loginMsg"), false, `Speichern fehlgeschlagen: ${error.message}`);
+      } else {
+        const txt = timeUp ? "⏱️ Zeit abgelaufen." : "⏹️ Gestoppt.";
+        showMsg($("loginMsg"), true, `✅ ${txt} Gespeichert: <strong>${correct}</strong> richtig.`);
+      }
+
+      await loadHighscores();
+    }
+
+    function parseHighscoreList(json){
+      if (!json) return [];
+      if (Array.isArray(json.top10)) return json.top10; // your format
+      if (Array.isArray(json.highscores)) return json.highscores;
+      if (Array.isArray(json.items)) return json.items;
+      if (Array.isArray(json.list)) return json.list;
+      if (Array.isArray(json.top)) return json.top;
+      if (Array.isArray(json.data)) return json.data;
+      if (json.highscores && Array.isArray(json.highscores.data)) return json.highscores.data;
+      return [];
+    }
+
+    function dedupeBestByName(list){
+      // keep best "correct" per name, stable-ish
+      const best = new Map(); // name -> {name, correct}
+      for (const r of list){
+        const name = String(r.name ?? r.display_name ?? "—");
+        const correct = Number(r.correct ?? r.score ?? r.correct_count ?? 0);
+        const prev = best.get(name);
+        if (!prev || correct > prev.correct) best.set(name, { name, correct });
+      }
+      return Array.from(best.values()).sort((a,b)=> b.correct - a.correct || a.name.localeCompare(b.name)).slice(0,10);
+    }
+
+    function renderHS(list){
+      const el = $("hsBox");
+      const filtered = dedupeBestByName(list || []);
+
+      if (!filtered.length){
+        el.innerHTML = `<div class="muted">Noch keine Einträge.</div>`;
+        return;
+      }
+      el.innerHTML = `
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Richtig</th></tr></thead>
+          <tbody>
+            ${filtered.map((r,i)=>`
+              <tr>
+                <td class="muted">${i+1}</td>
+                <td><strong>${String(r.name)}</strong></td>
+                <td>${Number(r.correct)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadHighscores(){
+      $("hsBox").textContent = "Lade…";
+      try{
+        const res = await fetch(FN_GET_HIGHSCORES_BINARY, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY },
+          body: JSON.stringify({})
+        });
+
+        const json = await res.json().catch(()=>null);
+        if (!res.ok || !json?.ok){
+          $("hsBox").innerHTML = `<div class="bad">Highscore-Fehler</div>`;
+          return;
+        }
+
+        renderHS(parseHighscoreList(json));
+      } catch {
+        $("hsBox").innerHTML = `<div class="bad">Netzwerkfehler</div>`;
+      }
+    }
+
+    function checkAnswer(){
+      if (!running) return;
+
+      const ans = $("answer");
+      const input = ans.value.trim();
+      if (!input) return;
+
+      if (current.type === "d2b"){
+        const clean = normalizeBinInput(input);
+
+        if (!/^[01\s]+$/.test(input) || !/^[01]+$/.test(clean)){
+          wrong++; resetStreak();
+          ans.classList.add("wrongInput");
+          showMsg($("fb"), false, "❌ Bitte nur 0 und 1 eingeben (Leerzeichen erlaubt).");
+          setTimeout(renderQuestion, 450);
+          return;
+        }
+
+        const val = parseInt(clean, 2);
+        if (val === current.dec){
+          correct++; $("correct").textContent = String(correct);
+          addStreakSuccess();
+          showMsg($("fb"), true, `✅ Richtig! ${group4(toBin(current.dec, 8))} = ${current.dec}`);
+          renderQuestion();
+        } else {
+          wrong++; resetStreak();
+          ans.classList.add("wrongInput");
+          showMsg($("fb"), false, `❌ Falsch. ${group4(toBin(current.dec, 8))} = ${current.dec}`);
+          setTimeout(renderQuestion, 450);
+        }
+      } else {
+        if (!/^\d+$/.test(input)){
+          wrong++; resetStreak();
+          ans.classList.add("wrongInput");
+          showMsg($("fb"), false, "❌ Bitte eine Dezimalzahl eingeben (nur Ziffern).");
+          setTimeout(renderQuestion, 450);
+          return;
+        }
+
+        const val = Number(input);
+        if (val === current.dec){
+          correct++; $("correct").textContent = String(correct);
+          addStreakSuccess();
+          showMsg($("fb"), true, `✅ Richtig! ${group4(current.bin8Display)} = ${current.dec}`);
+          renderQuestion();
+        } else {
+          wrong++; resetStreak();
+          ans.classList.add("wrongInput");
+          showMsg($("fb"), false, `❌ Falsch. ${group4(current.bin8Display)} = ${current.dec}`);
+          setTimeout(renderQuestion, 450);
+        }
+      }
+    }
+
+    async function codeLogin(){
+      const code = $("code").value.trim().toUpperCase();
+      if (!code) { showMsg($("loginMsg"), false, "Bitte Code eingeben."); return; }
+
+      try{
+        const res = await fetch(FN_STUDENT_LOGIN, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY },
+          body: JSON.stringify({ code })
+        });
+
+        const json = await res.json();
+        if (!res.ok){
+          showMsg($("loginMsg"), false, `❌ ${json.error || "Fehler"}${json.details ? " – " + json.details : ""}`);
+          return;
+        }
+
+        studentId = json.student.id;
+        $("studentName").textContent = json.student.display_name;
+
+        const { error: signErr } = await supabase.auth.signInWithPassword({ email: json.email, password: code });
+        if (signErr){
+          showMsg($("loginMsg"), false, `Login fehlgeschlagen: ${signErr.message}`);
+          return;
+        }
+
+        $("logoutBtn").style.display = "inline-block";
+        $("gameCard").style.display = "block";
+        $("runArea").style.display = "block";   // show side area immediately
+        showQuiz(false);                        // but hide question until start
+        setRunningUI(false);
+
+        showMsg($("loginMsg"), true, `✅ Willkommen, <strong>${json.student.display_name}</strong>!`);
+        await loadHighscores();
+      } catch(e){
+        showMsg($("loginMsg"), false, `Netzwerkfehler: ${String(e)}`);
+      }
+    }
+
+    async function logout(){
+      studentId = null;
+      $("logoutBtn").style.display = "none";
+      $("gameCard").style.display = "none";
+      $("runArea").style.display = "none";
+      if (timer) clearInterval(timer);
+      timer = null;
+      running = false;
+      await supabase.auth.signOut();
+      showMsg($("loginMsg"), true, "Abgemeldet.");
+    }
+
+    $("loginBtn").addEventListener("click", codeLogin);
+    $("code").addEventListener("keydown", (e)=>{ if (e.key==="Enter") codeLogin(); });
+    $("logoutBtn").addEventListener("click", logout);
+
+    $("startStopBtn").addEventListener("click", ()=>{
+      if (!running) startGame();
+      else stopGame(false);
+    });
+
+    $("submitBtn").addEventListener("click", checkAnswer);
+    $("answer").addEventListener("keydown", (e)=>{ if (e.key==="Enter") checkAnswer(); });
+
+    $("refreshHsBtn").addEventListener("click", loadHighscores);
+
+    updateHelpTable(8);
+  </script>
+</body>
+</html>

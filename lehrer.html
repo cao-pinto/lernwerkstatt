@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lehrerbereich – Gruppen & Ergebnisse</title>
+  <style>
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 1200px; margin:0 auto; padding:24px; }
+    .card { background:#fff; border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+    .grid3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px; }
+    @media (max-width: 980px){ .grid2, .grid3 { grid-template-columns: 1fr; } }
+    input, select, textarea { padding:10px 12px; border-radius:10px; border:1px solid #ccd2e1; font-size:1rem; }
+    textarea { width:100%; min-height:130px; }
+    button { padding:10px 14px; border-radius:10px; border:0; background:#1f6feb; color:#fff; font-weight:900; cursor:pointer; }
+    button.ghost { background:#e5e7eb; color:#111; }
+    button.danger { background:#fee2e2; color:#111; }
+    .muted { opacity:.8; }
+    .ok { background:#ecfdf5; border:1px solid #10b98144; padding:10px; border-radius:10px; }
+    .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:10px; }
+    table { width:100%; border-collapse: collapse; margin-top:10px; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid #e5e7eb; vertical-align:top; }
+    th { font-size:.9rem; opacity:.9; }
+    a.ghost { text-decoration:none; padding:10px 14px; border-radius:10px; background:#e5e7eb; color:#111; font-weight:900; }
+    .pill { padding:6px 10px; border-radius:999px; background:#eef2ff; font-weight:800; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h1 style="margin:0;">Lehrerbereich – Gruppen & Ergebnisse</h1>
+        <a class="ghost" href="./index.html">← Startseite</a>
+      </div>
+      <p class="muted" style="margin:10px 0 0;">
+        Lehrer sehen nur Ergebnisse ihrer Gruppen. Digital Learning Manager (DLM) können zusätzlich Lehrer und Schüler der Schule verwalten.
+      </p>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2 style="margin-top:0;">Login</h2>
+      <div class="row">
+        <input id="email" placeholder="Email" />
+        <input id="pass" type="password" placeholder="Passwort" />
+        <button id="loginBtn">Einloggen</button>
+      </div>
+      <div id="loginMsg" style="margin-top:10px;"></div>
+    </div>
+
+    <div id="app" style="display:none;">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <div class="muted">Eingeloggt als:</div>
+            <div style="font-weight:900; font-size:1.2rem;" id="who">—</div>
+            <div class="row" style="margin-top:6px;">
+              <span class="pill" id="rolePill">Rolle: —</span>
+              <span class="pill" id="schoolPill">Schule: —</span>
+            </div>
+          </div>
+          <div class="row">
+            <button class="ghost" id="refreshBtn">Aktualisieren</button>
+            <button class="ghost" id="logoutBtn">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0;">1) Meine Gruppen</h2>
+        <div class="row">
+          <input id="groupName" placeholder="Neue Gruppe (z. B. 2A Mathe)" />
+          <button id="createGroupBtn">Gruppe erstellen</button>
+          <select id="groupSelect"></select>
+          <button class="danger" id="deleteGroupBtn">Gruppe löschen</button>
+        </div>
+        <div id="groupMsg" style="margin-top:10px;"></div>
+        <div id="groupsList" class="muted">—</div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0;">2) Kinder in Gruppen verwalten</h2>
+        <div class="row">
+          <select id="classFilter"></select>
+          <button class="ghost" id="toggleAllBtn">Alle markieren</button>
+          <button id="addToGroupBtn">Markierte zur Gruppe hinzufügen</button>
+        </div>
+        <div id="memberMsg" style="margin-top:10px;"></div>
+
+        <div class="grid2" style="margin-top:10px;">
+          <div>
+            <h3>Schüler der Schule (nach Klasse)</h3>
+            <div id="schoolStudents" class="muted">—</div>
+          </div>
+          <div>
+            <h3>Schüler in der gewählten Gruppe</h3>
+            <div id="groupStudents" class="muted">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0;">3) Ergebnisse der gewählten Gruppe</h2>
+        <div class="muted">Anzeige basiert nur auf Schülern der aktuell gewählten Gruppe.</div>
+        <div id="resultsBox" class="muted" style="margin-top:10px;">—</div>
+      </div>
+
+      <div class="card" id="managerCard" style="display:none;">
+        <h2 style="margin-top:0;">4) Digital Learning Manager – Schulverwaltung</h2>
+
+        <div class="grid2">
+          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+            <h3 style="margin-top:0;">Lehrer anlegen</h3>
+            <div class="row">
+              <input id="tName" placeholder="Anzeigename" />
+              <input id="tEmail" placeholder="Email" />
+              <input id="tPass" type="password" placeholder="Passwort" />
+              <button id="createTeacherBtn">Lehrer erstellen</button>
+            </div>
+            <div id="teacherMsg" style="margin-top:10px;"></div>
+            <div id="teachersList" class="muted" style="margin-top:10px;">—</div>
+          </div>
+
+          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+            <h3 style="margin-top:0;">Schüler einzeln anlegen</h3>
+            <div class="row">
+              <input id="sFirst" placeholder="Vorname" />
+              <input id="sLast" placeholder="Nachname" />
+              <input id="sClass" placeholder="Klasse" />
+              <button id="createStudentBtn">Schüler erstellen</button>
+            </div>
+            <div class="muted" style="margin-top:8px;">Rufname wird automatisch erzeugt: Vorname + erster Buchstabe Nachname + Punkt.</div>
+            <div id="studentMsg" style="margin-top:10px;"></div>
+          </div>
+        </div>
+
+        <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
+          <h3 style="margin-top:0;">CSV-Import Schüler</h3>
+          <p class="muted" style="margin-top:0;">Spalten: <code>vorname,nachname,klasse</code> (oder mit <code>;</code> getrennt). Erste Zeile darf Header sein.</p>
+          <div class="row">
+            <input type="file" id="csvFile" accept=".csv,text/csv" />
+            <button id="importCsvBtn">CSV importieren</button>
+          </div>
+          <div id="csvMsg" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
+          <h3 style="margin-top:0;">Schüler der Schule</h3>
+          <div class="row">
+            <select id="mgrClassFilter"></select>
+            <button class="ghost" id="refreshStudentsBtn">Liste aktualisieren</button>
+          </div>
+          <div id="studentsList" class="muted" style="margin-top:10px;">—</div>
+        </div>
+
+        <p class="muted" style="margin-top:12px;">
+          Hinweis: Für das Löschen von Lehrer-/Schüler-Logins werden Edge Functions erwartet:
+          <code>manager_create_teacher</code>, <code>manager_delete_teacher</code>, <code>manager_delete_student</code>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://dnlencbwbbriijmzijci.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_G8SaY8-oyn7TcP-uH6neuA_PNqUR1x0";
+
+    const FN_MANAGER_CREATE_TEACHER = "https://dnlencbwbbriijmzijci.functions.supabase.co/manager_create_teacher";
+    const FN_MANAGER_DELETE_TEACHER = "https://dnlencbwbbriijmzijci.functions.supabase.co/manager_delete_teacher";
+    const FN_MANAGER_DELETE_STUDENT = "https://dnlencbwbbriijmzijci.functions.supabase.co/manager_delete_student";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = (id) => document.getElementById(id);
+
+    let me = null;
+    let mySchool = null;
+    let schoolStudents = [];
+    let myGroups = [];
+    let groupMembers = [];
+
+    function msg(el, ok, text) {
+      el.innerHTML = `<div class="${ok ? "ok" : "bad"}">${text}</div>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    function normalizeText(s) {
+      return String(s || "").trim().replace(/\s+/g, " ");
+    }
+
+    function makeDisplayName(first, last) {
+      const f = normalizeText(first);
+      const l = normalizeText(last);
+      return l ? `${f} ${l[0].toUpperCase()}.` : f;
+    }
+
+    function randCode(len=5){
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let out = "";
+      for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+      return out;
+    }
+
+    async function uniqueCode() {
+      let code = randCode();
+      for (let i = 0; i < 10; i++) {
+        const { data } = await supabase.from("students").select("id").eq("login_code", code).maybeSingle();
+        if (!data) return code;
+        code = randCode();
+      }
+      return `${randCode(4)}${Date.now().toString().slice(-2)}`;
+    }
+
+    async function getTokenOrNull() {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token || null;
+    }
+
+    async function apiJson(url, token, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "apikey": SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(body)
+      });
+      const text = await res.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch {}
+      if (!res.ok) throw new Error((json && (json.error || json.message || json.details)) || text || `HTTP ${res.status}`);
+      return json || {};
+    }
+
+    async function ensureUI() {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        $("loginCard").style.display = "block";
+        $("app").style.display = "none";
+        return;
+      }
+      $("loginCard").style.display = "none";
+      $("app").style.display = "block";
+      await refreshAll();
+    }
+
+    async function loadProfile() {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      const { data: teacher, error } = await supabase
+        .from("teachers")
+        .select("id,display_name,school_id,role")
+        .eq("user_id", userId)
+        .single();
+
+      if (error || !teacher) throw new Error("Kein Lehrerprofil gefunden. Bitte Admin kontaktieren.");
+      me = teacher;
+
+      const { data: school } = await supabase.from("schools").select("id,name").eq("id", me.school_id).maybeSingle();
+      mySchool = school;
+
+      $("who").textContent = me.display_name || "—";
+      $("rolePill").textContent = `Rolle: ${me.role === "manager" ? "Digital Learning Manager" : "Lehrer"}`;
+      $("schoolPill").textContent = `Schule: ${school?.name || "—"}`;
+      $("managerCard").style.display = me.role === "manager" ? "block" : "none";
+    }
+
+    async function loadGroups() {
+      $("groupsList").textContent = "Lade Gruppen…";
+
+      const { data, error } = await supabase
+        .from("teacher_groups")
+        .select("id,name,created_at")
+        .eq("teacher_id", me.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        $("groupsList").innerHTML = `<div class="bad">Fehler: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      myGroups = data || [];
+      $("groupSelect").innerHTML = myGroups.length
+        ? myGroups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join("")
+        : `<option value="">(keine Gruppen)</option>`;
+
+      if (!myGroups.length) {
+        $("groupsList").innerHTML = `<div class="muted">Noch keine Gruppen.</div>`;
+        return;
+      }
+
+      $("groupsList").innerHTML = `
+        <table>
+          <thead><tr><th>Gruppe</th><th>Erstellt</th></tr></thead>
+          <tbody>
+            ${myGroups.map(g => {
+              const d = new Date(g.created_at).toLocaleString("de-AT");
+              return `<tr><td><strong>${escapeHtml(g.name)}</strong></td><td class="muted">${d}</td></tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadSchoolStudents() {
+      const { data, error } = await supabase
+        .from("students")
+        .select("id,first_name,last_name,class_name,display_name,login_code,created_at")
+        .eq("school_id", me.school_id)
+        .order("class_name", { ascending: true })
+        .order("last_name", { ascending: true })
+        .order("first_name", { ascending: true });
+
+      if (error) {
+        $("schoolStudents").innerHTML = `<div class="bad">Fehler: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      schoolStudents = data || [];
+
+      const classes = Array.from(new Set(schoolStudents.map(s => normalizeText(s.class_name)).filter(Boolean))).sort((a,b) => a.localeCompare(b, "de"));
+      const classOptions = [`<option value="">Alle Klassen</option>`].concat(classes.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
+      $("classFilter").innerHTML = classOptions.join("");
+      $("mgrClassFilter").innerHTML = classOptions.join("");
+
+      renderSchoolStudents();
+      renderManagerStudents();
+    }
+
+    function getFilteredSchoolStudents() {
+      const c = normalizeText($("classFilter").value);
+      return c ? schoolStudents.filter(s => normalizeText(s.class_name) === c) : schoolStudents;
+    }
+
+    function renderSchoolStudents() {
+      const list = getFilteredSchoolStudents();
+      if (!list.length) {
+        $("schoolStudents").innerHTML = `<div class="muted">Keine Schüler gefunden.</div>`;
+        return;
+      }
+
+      $("schoolStudents").innerHTML = `
+        <table>
+          <thead><tr><th></th><th>Rufname</th><th>Vorname</th><th>Nachname</th><th>Klasse</th><th>Code</th></tr></thead>
+          <tbody>
+            ${list.map(s => `
+              <tr>
+                <td><input type="checkbox" data-pick-student="${s.id}" /></td>
+                <td><strong>${escapeHtml(s.display_name || makeDisplayName(s.first_name, s.last_name))}</strong></td>
+                <td>${escapeHtml(s.first_name || "")}</td>
+                <td>${escapeHtml(s.last_name || "")}</td>
+                <td>${escapeHtml(s.class_name || "")}</td>
+                <td><code>${escapeHtml(s.login_code || "")}</code></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadGroupMembers() {
+      const gid = $("groupSelect").value;
+      if (!gid) {
+        groupMembers = [];
+        $("groupStudents").innerHTML = `<div class="muted">Bitte Gruppe wählen.</div>`;
+        return;
+      }
+
+      const { data: links, error } = await supabase
+        .from("teacher_group_students")
+        .select("student_id")
+        .eq("group_id", gid);
+
+      if (error) {
+        $("groupStudents").innerHTML = `<div class="bad">Fehler: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      const ids = (links || []).map(x => x.student_id);
+      if (!ids.length) {
+        groupMembers = [];
+        $("groupStudents").innerHTML = `<div class="muted">Noch keine Schüler in dieser Gruppe.</div>`;
+        return;
+      }
+
+      const { data: students, error: studentErr } = await supabase
+        .from("students")
+        .select("id,first_name,last_name,class_name,display_name,login_code")
+        .in("id", ids)
+        .order("class_name", { ascending: true })
+        .order("last_name", { ascending: true });
+
+      if (studentErr) {
+        $("groupStudents").innerHTML = `<div class="bad">Fehler: ${escapeHtml(studentErr.message)}</div>`;
+        return;
+      }
+
+      groupMembers = students || [];
+
+      $("groupStudents").innerHTML = `
+        <table>
+          <thead><tr><th>Rufname</th><th>Klasse</th><th>Code</th><th>Aktion</th></tr></thead>
+          <tbody>
+            ${groupMembers.map(s => `
+              <tr>
+                <td><strong>${escapeHtml(s.display_name || makeDisplayName(s.first_name, s.last_name))}</strong></td>
+                <td>${escapeHtml(s.class_name || "")}</td>
+                <td><code>${escapeHtml(s.login_code || "")}</code></td>
+                <td><button class="danger" data-unassign="${s.id}">Aus Gruppe entfernen</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      document.querySelectorAll("[data-unassign]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const sid = btn.getAttribute("data-unassign");
+          const gidNow = $("groupSelect").value;
+          if (!sid || !gidNow) return;
+          const { error: delErr } = await supabase.from("teacher_group_students").delete().eq("group_id", gidNow).eq("student_id", sid);
+          if (delErr) {
+            msg($("memberMsg"), false, `Fehler: ${escapeHtml(delErr.message)}`);
+          } else {
+            msg($("memberMsg"), true, "✅ Schüler aus Gruppe entfernt.");
+            await refreshGroupArea();
+          }
+        });
+      });
+    }
+
+    async function renderResultsForGroup() {
+      const gid = $("groupSelect").value;
+      if (!gid) {
+        $("resultsBox").innerHTML = `<div class="muted">Bitte Gruppe wählen.</div>`;
+        return;
+      }
+      if (!groupMembers.length) {
+        $("resultsBox").innerHTML = `<div class="muted">Noch keine Schüler in dieser Gruppe.</div>`;
+        return;
+      }
+
+      const ids = groupMembers.map(s => s.id);
+      const { data: attempts, error } = await supabase
+        .from("attempts")
+        .select("student_id,game,mode,correct_count,wrong_count,total_count,accuracy,created_at")
+        .in("student_id", ids)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        $("resultsBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      const byStudent = new Map(groupMembers.map(s => [s.id, { student: s, rows: [] }]));
+      for (const a of (attempts || [])) byStudent.get(a.student_id)?.rows.push(a);
+
+      const rows = groupMembers.map(s => {
+        const list = byStudent.get(s.id)?.rows || [];
+        const math = list.filter(x => x.game === "math");
+        const bin = list.filter(x => x.game === "binary");
+        const tree = list.filter(x => x.game === "tree");
+
+        const bestMath = math.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
+        const bestBin = bin.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
+        const bestTree = tree.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
+
+        return {
+          name: s.display_name || makeDisplayName(s.first_name, s.last_name),
+          class_name: s.class_name || "",
+          bestMath,
+          bestBin,
+          bestTree,
+          attempts: list.length
+        };
+      }).sort((a, b) => (b.bestMath + b.bestBin + b.bestTree) - (a.bestMath + a.bestBin + a.bestTree) || a.name.localeCompare(b.name, "de"));
+
+      $("resultsBox").innerHTML = `
+        <table>
+          <thead><tr><th>Schüler</th><th>Klasse</th><th>Best Mathe</th><th>Best Binär</th><th>Best Rechenbaum</th><th>Versuche gesamt</th></tr></thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr>
+                <td><strong>${escapeHtml(r.name)}</strong></td>
+                <td>${escapeHtml(r.class_name)}</td>
+                <td>${r.bestMath}</td>
+                <td>${r.bestBin}</td>
+                <td>${r.bestTree}</td>
+                <td class="muted">${r.attempts}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function refreshGroupArea() {
+      await loadGroups();
+      await loadGroupMembers();
+      await renderResultsForGroup();
+    }
+
+    async function refreshTeachersList() {
+      if (me.role !== "manager") return;
+
+      const { data, error } = await supabase
+        .from("teachers")
+        .select("id,display_name,role,created_at")
+        .eq("school_id", me.school_id)
+        .order("role", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        $("teachersList").innerHTML = `<div class="bad">Fehler: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      const rows = (data || []).filter(t => t.id !== me.id);
+      if (!rows.length) {
+        $("teachersList").innerHTML = `<div class="muted">Keine weiteren Lehrer vorhanden.</div>`;
+        return;
+      }
+
+      $("teachersList").innerHTML = `
+        <table>
+          <thead><tr><th>Name</th><th>Rolle</th><th>Erstellt</th><th>Aktion</th></tr></thead>
+          <tbody>
+            ${rows.map(t => `
+              <tr>
+                <td><strong>${escapeHtml(t.display_name || "—")}</strong></td>
+                <td>${escapeHtml(t.role)}</td>
+                <td class="muted">${new Date(t.created_at).toLocaleString("de-AT")}</td>
+                <td><button class="danger" data-del-teacher="${t.id}">Lehrer löschen</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      document.querySelectorAll("[data-del-teacher]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const teacher_id = btn.getAttribute("data-del-teacher");
+          if (!teacher_id) return;
+          if (!confirm("Lehrer wirklich löschen? Gruppen des Lehrers werden mitgelöscht.")) return;
+
+          const token = await getTokenOrNull();
+          if (!token) return msg($("teacherMsg"), false, "Kein Login-Token.");
+
+          try {
+            await apiJson(FN_MANAGER_DELETE_TEACHER, token, { teacher_id });
+            msg($("teacherMsg"), true, "✅ Lehrer gelöscht.");
+            await refreshTeachersList();
+          } catch (e) {
+            msg($("teacherMsg"), false, `Fehler: ${escapeHtml(String(e.message || e))}`);
+          }
+        });
+      });
+    }
+
+    function renderManagerStudents() {
+      if (me.role !== "manager") return;
+
+      const classFilter = normalizeText($("mgrClassFilter").value);
+      const rows = classFilter
+        ? schoolStudents.filter(s => normalizeText(s.class_name) === classFilter)
+        : schoolStudents;
+
+      if (!rows.length) {
+        $("studentsList").innerHTML = `<div class="muted">Keine Schüler gefunden.</div>`;
+        return;
+      }
+
+      $("studentsList").innerHTML = `
+        <table>
+          <thead><tr><th>Rufname</th><th>Vorname</th><th>Nachname</th><th>Klasse</th><th>Code</th><th>Aktion</th></tr></thead>
+          <tbody>
+            ${rows.map(s => `
+              <tr>
+                <td><strong>${escapeHtml(s.display_name || makeDisplayName(s.first_name, s.last_name))}</strong></td>
+                <td>${escapeHtml(s.first_name || "")}</td>
+                <td>${escapeHtml(s.last_name || "")}</td>
+                <td>${escapeHtml(s.class_name || "")}</td>
+                <td><code>${escapeHtml(s.login_code || "")}</code></td>
+                <td><button class="danger" data-del-student="${s.id}">Schüler löschen</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      document.querySelectorAll("[data-del-student]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const student_id = btn.getAttribute("data-del-student");
+          if (!student_id) return;
+          if (!confirm("Schüler wirklich löschen? Alle Ergebnisse werden mitgelöscht.")) return;
+
+          const token = await getTokenOrNull();
+          if (!token) return msg($("studentMsg"), false, "Kein Login-Token.");
+
+          try {
+            await apiJson(FN_MANAGER_DELETE_STUDENT, token, { student_id });
+            msg($("studentMsg"), true, "✅ Schüler gelöscht.");
+            await loadSchoolStudents();
+            await refreshGroupArea();
+          } catch (e) {
+            msg($("studentMsg"), false, `Fehler: ${escapeHtml(String(e.message || e))}`);
+          }
+        });
+      });
+    }
+
+    function parseCsvRows(text) {
+      const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+      if (!lines.length) return [];
+
+      const delimiter = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ";" : ",";
+
+      const rawRows = lines.map(line => line.split(delimiter).map(c => normalizeText(c.replace(/^"|"$/g, ""))));
+
+      const head = rawRows[0].map(x => x.toLowerCase());
+      const hasHeader = head.includes("vorname") || head.includes("nachname") || head.includes("klasse") || head.includes("first_name");
+      const start = hasHeader ? 1 : 0;
+
+      const rows = [];
+      for (let i = start; i < rawRows.length; i++) {
+        const r = rawRows[i];
+        if (r.length < 3) continue;
+        const first_name = r[0];
+        const last_name = r[1];
+        const class_name = r[2];
+        if (!first_name || !last_name || !class_name) continue;
+        rows.push({ first_name, last_name, class_name });
+      }
+      return rows;
+    }
+
+    async function createStudentInSchool(first_name, last_name, class_name) {
+      const login_code = await uniqueCode();
+      const display_name = makeDisplayName(first_name, last_name);
+      return supabase.from("students").insert({
+        school_id: me.school_id,
+        first_name: normalizeText(first_name),
+        last_name: normalizeText(last_name),
+        class_name: normalizeText(class_name),
+        display_name,
+        login_code
+      });
+    }
+
+    async function refreshAll() {
+      try {
+        await loadProfile();
+      } catch (e) {
+        msg($("loginMsg"), false, escapeHtml(String(e.message || e)));
+        await supabase.auth.signOut();
+        $("loginCard").style.display = "block";
+        $("app").style.display = "none";
+        return;
+      }
+
+      await loadSchoolStudents();
+      await refreshGroupArea();
+      if (me.role === "manager") {
+        await refreshTeachersList();
+      }
+    }
+
+    $("loginBtn").addEventListener("click", async () => {
+      const email = normalizeText($("email").value);
+      const password = normalizeText($("pass").value);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) msg($("loginMsg"), false, `Login fehlgeschlagen: ${escapeHtml(error.message)}`);
+      else msg($("loginMsg"), true, "✅ Eingeloggt.");
+      await ensureUI();
+    });
+
+    $("logoutBtn").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      await ensureUI();
+    });
+
+    $("refreshBtn").addEventListener("click", refreshAll);
+
+    $("createGroupBtn").addEventListener("click", async () => {
+      const name = normalizeText($("groupName").value);
+      if (!name) return msg($("groupMsg"), false, "Bitte Gruppennamen eingeben.");
+
+      const { error } = await supabase.from("teacher_groups").insert({
+        school_id: me.school_id,
+        teacher_id: me.id,
+        name
+      });
+
+      if (error) msg($("groupMsg"), false, `Fehler: ${escapeHtml(error.message)}`);
+      else {
+        msg($("groupMsg"), true, "✅ Gruppe erstellt.");
+        $("groupName").value = "";
+        await refreshGroupArea();
+      }
+    });
+
+    $("deleteGroupBtn").addEventListener("click", async () => {
+      const gid = $("groupSelect").value;
+      if (!gid) return msg($("groupMsg"), false, "Bitte Gruppe wählen.");
+      if (!confirm("Gruppe wirklich löschen?")) return;
+
+      const { error } = await supabase.from("teacher_groups").delete().eq("id", gid).eq("teacher_id", me.id);
+      if (error) msg($("groupMsg"), false, `Fehler: ${escapeHtml(error.message)}`);
+      else {
+        msg($("groupMsg"), true, "✅ Gruppe gelöscht.");
+        await refreshGroupArea();
+      }
+    });
+
+    $("groupSelect").addEventListener("change", async () => {
+      await loadGroupMembers();
+      await renderResultsForGroup();
+    });
+
+    $("classFilter").addEventListener("change", renderSchoolStudents);
+
+    let allMarked = false;
+    $("toggleAllBtn").addEventListener("click", () => {
+      allMarked = !allMarked;
+      document.querySelectorAll("[data-pick-student]").forEach(cb => { cb.checked = allMarked; });
+      $("toggleAllBtn").textContent = allMarked ? "Markierung aufheben" : "Alle markieren";
+    });
+
+    $("addToGroupBtn").addEventListener("click", async () => {
+      const gid = $("groupSelect").value;
+      if (!gid) return msg($("memberMsg"), false, "Bitte zuerst eine Gruppe wählen.");
+
+      const ids = Array.from(document.querySelectorAll("[data-pick-student]:checked")).map(x => x.getAttribute("data-pick-student")).filter(Boolean);
+      if (!ids.length) return msg($("memberMsg"), false, "Bitte mindestens ein Kind markieren.");
+
+      const rows = ids.map(student_id => ({ group_id: gid, student_id }));
+      const { error } = await supabase.from("teacher_group_students").upsert(rows, { onConflict: "group_id,student_id", ignoreDuplicates: true });
+      if (error) {
+        msg($("memberMsg"), false, `Fehler: ${escapeHtml(error.message)}`);
+      } else {
+        msg($("memberMsg"), true, `✅ ${ids.length} Kind(er) zur Gruppe hinzugefügt.`);
+        await refreshGroupArea();
+      }
+    });
+
+    $("createTeacherBtn").addEventListener("click", async () => {
+      if (me.role !== "manager") return;
+      const display_name = normalizeText($("tName").value);
+      const email = normalizeText($("tEmail").value);
+      const password = normalizeText($("tPass").value);
+      if (!display_name || !email || !password) return msg($("teacherMsg"), false, "Bitte Name, Email und Passwort ausfüllen.");
+
+      const token = await getTokenOrNull();
+      if (!token) return msg($("teacherMsg"), false, "Kein Login-Token.");
+
+      try {
+        await apiJson(FN_MANAGER_CREATE_TEACHER, token, { school_id: me.school_id, display_name, email, password, role: "teacher" });
+        msg($("teacherMsg"), true, "✅ Lehrer erstellt.");
+        $("tName").value = "";
+        $("tEmail").value = "";
+        $("tPass").value = "";
+        await refreshTeachersList();
+      } catch (e) {
+        msg($("teacherMsg"), false, `Fehler: ${escapeHtml(String(e.message || e))}`);
+      }
+    });
+
+    $("createStudentBtn").addEventListener("click", async () => {
+      if (me.role !== "manager") return;
+      const first = normalizeText($("sFirst").value);
+      const last = normalizeText($("sLast").value);
+      const klass = normalizeText($("sClass").value);
+      if (!first || !last || !klass) return msg($("studentMsg"), false, "Bitte Vorname, Nachname und Klasse ausfüllen.");
+
+      const { error } = await createStudentInSchool(first, last, klass);
+      if (error) msg($("studentMsg"), false, `Fehler: ${escapeHtml(error.message)}`);
+      else {
+        msg($("studentMsg"), true, `✅ Schüler erstellt: ${escapeHtml(makeDisplayName(first, last))}`);
+        $("sFirst").value = "";
+        $("sLast").value = "";
+        $("sClass").value = "";
+        await loadSchoolStudents();
+        await refreshGroupArea();
+      }
+    });
+
+    $("importCsvBtn").addEventListener("click", async () => {
+      if (me.role !== "manager") return;
+      const file = $("csvFile").files?.[0];
+      if (!file) return msg($("csvMsg"), false, "Bitte CSV-Datei auswählen.");
+
+      const text = await file.text();
+      const rows = parseCsvRows(text);
+      if (!rows.length) return msg($("csvMsg"), false, "Keine gültigen Datensätze gefunden. Erwartet: Vorname,Nachname,Klasse.");
+
+      let ok = 0;
+      let fail = 0;
+      for (const r of rows) {
+        const { error } = await createStudentInSchool(r.first_name, r.last_name, r.class_name);
+        if (error) fail++; else ok++;
+      }
+
+      msg($("csvMsg"), fail ? false : true, `Import fertig: ${ok} erfolgreich, ${fail} fehlgeschlagen.`);
+      await loadSchoolStudents();
+      await refreshGroupArea();
+    });
+
+    $("mgrClassFilter").addEventListener("change", renderManagerStudents);
+    $("refreshStudentsBtn").addEventListener("click", async () => {
+      await loadSchoolStudents();
+      await refreshGroupArea();
+    });
+
+    await ensureUI();
+  </script>
+</body>
+</html>

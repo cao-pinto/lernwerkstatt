@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LernWerkstatt</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 1100px; margin:0 auto; padding:24px; }
+    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    h1 { margin:0; font-size:1.8rem; }
+    .muted { opacity:.8; }
+    .pill { padding:8px 12px; border-radius:999px; background:#eef2ff; font-weight:900; }
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:10px 14px; border-radius:12px;
+      border:0; cursor:pointer; font-weight:900;
+      background:#1f6feb; color:#fff; text-decoration:none;
+    }
+    .btn.ghost { background:#e5e7eb; color:#111; }
+    .btn.dark { background:#111827; color:#fff; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-top:14px; }
+    .tile { background:#fff; border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.06); border:1px solid #e5e7eb; }
+    .tile h2 { margin:0 0 8px; font-size:1.2rem; }
+    .tile p { margin:0 0 12px; }
+    .logoBox { display:flex; align-items:center; gap:12px; }
+    .logo { width:56px; height:56px; flex:0 0 auto; }
+
+    .siteFooter {
+      margin-top: 18px;
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="card">
+      <div class="top">
+        <div class="logoBox">
+          <svg class="logo" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-label="LernWerkstatt Logo">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#1f6feb"/>
+                <stop offset="1" stop-color="#111827"/>
+              </linearGradient>
+            </defs>
+            <rect x="10" y="10" width="108" height="108" rx="26" fill="url(#g)"/>
+            <path d="M34 42c0-4 3-7 7-7h26c7 0 13 3 17 8v52c-4-5-10-8-17-8H41c-4 0-7-3-7-7V42z"
+                  fill="#ffffff" opacity="0.95"/>
+            <path d="M94 42c0-4-3-7-7-7H61c-7 0-13 3-17 8v52c4-5 10-8 17-8h26c4 0 7-3 7-7V42z"
+                  fill="#ffffff" opacity="0.85"/>
+            <path d="M64 54l4 2 4-2 4 3-1 4 3 3 4-1 3 4-2 4 2 4-3 4-4-1-3 3 1 4-4 3-4-2-4 2-4-3 1-4-3-3-4 1-3-4 2-4-2-4 3-4 4 1 3-3-1-4 4-3z"
+                  fill="#111827" opacity="0.25"/>
+            <circle cx="64" cy="70" r="7" fill="#111827" opacity="0.35"/>
+          </svg>
+
+          <div>
+            <h1>LernWerkstatt</h1>
+            <div class="muted">Übersicht der Fächer & Lernspiele</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <a class="btn ghost" href="./lehrer.html">Lehrerbereich</a>
+          <a class="btn dark" href="./admin.html">Adminbereich</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="tile">
+        <h2>Mathematik</h2>
+        <p class="muted">Einmaleins-Training (120s) – mit Schülercode-Login</p>
+        <div class="row">
+          <a class="btn" href="./mathematik.html">1×1 Trainer</a>
+          <a class="btn ghost" href="./rechenbaum.html">Rechenbaum</a>
+        </div>
+      </div>
+
+      <div class="tile">
+        <h2>Digitale Bildung</h2>
+        <p class="muted">Umwandlung Dezimal ↔ Binär (90s) – mit Hilfe (9 Bit)</p>
+        <div class="row">
+          <a class="btn" href="./BinärPro.html">Binärumwandlung starten</a>
+        </div>
+      </div>
+
+      <div class="tile">
+        <h2>Technisches Seminar</h2>
+        <p class="muted">Platzhalter – hier können später weitere Inhalte rein</p>
+        <div class="row">
+          <a class="btn ghost" href="./technik.html">Zur Übersicht</a>
+        </div>
+      </div>
+    </div>
+
+    <footer class="siteFooter" aria-label="Rechtliche Links">
+      <a class="btn ghost" href="./impressum.html">Impressum</a>
+      <a class="btn ghost" href="./datenschutz.html">Datenschutz</a>
+    </footer>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mathematik – Einmaleins (120s)</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 1100px; margin:0 auto; padding:24px; }
+    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .top { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+    h1 { margin:0; font-size:1.8rem; }
+    h2,h3 { margin:0 0 10px; }
+    .muted { opacity:.8; }
+    input { padding:10px 12px; border-radius:12px; border:1px solid #ccd2e1; font-size:1rem; min-width:240px; }
+    button { padding:10px 14px; border-radius:12px; border:0; background:#1f6feb; color:#fff; font-weight:900; cursor:pointer; }
+    button.secondary { background:#111827; }
+    button.ghost { background:#e5e7eb; color:#111; }
+    a.ghost { text-decoration:none; padding:10px 14px; border-radius:12px; background:#e5e7eb; color:#111; font-weight:900; }
+    .pill { padding:8px 12px; border-radius:999px; background:#eef2ff; font-weight:900; }
+    .ok { background:#ecfdf5; border:1px solid #10b98144; padding:10px; border-radius:12px; }
+    .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:12px; }
+    .feedback { margin-top:12px; display:none; }
+
+    .modeBar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .modeBtn { background:#e5e7eb; color:#111; }
+    .modeBtn.active { background:#1f6feb; color:#fff; }
+
+    .startBar { display:flex; justify-content:center; margin-top:14px; }
+    .startBtn { padding:14px 22px; font-size:1.1rem; border-radius:16px; }
+
+    .runGrid { display:grid; grid-template-columns: 1fr; gap:12px; margin-top:12px; }
+    .statsRow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+
+    .taskBox { background:#f9fafb; border:1px solid #e5e7eb; border-radius:16px; padding:14px; }
+    .task { font-size:2rem; font-weight:1000; }
+    .taskHint { margin-top:4px; }
+
+    .twoCol { display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-top:12px; }
+    @media (max-width: 820px){ .twoCol { grid-template-columns: 1fr; } }
+
+    table { width:100%; border-collapse: collapse; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid #e5e7eb; }
+    th { font-size:.9rem; opacity:.9; }
+
+    .sectionTitle { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+    .miniBtn { padding:8px 10px; border-radius:10px; }
+
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div>
+          <h1>Mathematik – Einmaleins ⚡</h1>
+          <div class="muted">120 Sekunden – Modus wählen → START → so viele Aufgaben wie möglich</div>
+        </div>
+        <a class="ghost" href="./index.html">← Startseite</a>
+      </div>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2>Schüler-Code</h2>
+      <div class="row">
+        <input id="code" placeholder="Code (z.B. AB7K2)" style="text-transform:uppercase;" />
+        <button id="loginBtn">Anmelden</button>
+        <button class="ghost" id="logoutBtn" style="display:none;">Logout</button>
+      </div>
+      <div id="loginMsg" class="feedback"></div>
+      <div class="muted" style="margin-top:10px;">Hinweis: Derselbe Code funktioniert auf mehreren Geräten.</div>
+    </div>
+
+    <div class="card" id="gameCard" style="display:none;">
+      <div class="row" style="justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div class="muted">Angemeldet als:</div>
+          <div style="font-weight:1000; font-size:1.2rem;" id="studentName">—</div>
+        </div>
+
+        <!-- Modus-Auswahl oben -->
+        <div class="modeBar">
+          <button id="smallBtn" class="modeBtn active" type="button">Kleines 1×1</button>
+          <button id="bigBtn" class="modeBtn" type="button">Großes 1×1</button>
+        </div>
+      </div>
+
+      <!-- START Button mittig -->
+      <div class="startBar" id="startBar">
+        <button id="startBtn" class="startBtn" type="button">▶ START</button>
+      </div>
+
+      <!-- Laufender Spielbereich -->
+      <div id="runArea" style="display:none;">
+        <div class="statsRow" style="margin-top:14px;">
+          <div class="pill">Zeit: <span id="time">120</span>s</div>
+          <div class="pill">Richtig: <span id="right">0</span></div>
+          <div class="pill">Falsch: <span id="wrong">0</span></div>
+          <div class="pill">Accuracy: <span id="acc">0%</span></div>
+          <div class="pill">Streak: <span id="streak">0</span></div>
+          <button class="ghost miniBtn" id="stopBtn" type="button">Stop</button>
+        </div>
+
+        <div class="runGrid">
+          <div class="taskBox">
+            <div class="muted">Rechnung:</div>
+            <div id="task" class="task">—</div>
+            <div class="muted taskHint">Tipp: Enter = OK</div>
+          </div>
+
+          <div class="row">
+            <input id="answer" inputmode="numeric" autocomplete="off" placeholder="Ergebnis…" />
+            <button id="okBtn" type="button">OK</button>
+          </div>
+
+          <div id="fb" class="feedback"></div>
+        </div>
+      </div>
+
+      <!-- Entwicklung + Highscore -->
+      <div style="margin-top:16px;">
+        <div class="twoCol">
+          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+            <div class="sectionTitle">
+              <h3>Meine Entwicklung</h3>
+              <button class="ghost miniBtn" id="refreshMeBtn" type="button">↻</button>
+            </div>
+            <div id="statsBox" class="muted">—</div>
+            <div id="historyBox" class="muted">—</div>
+          </div>
+
+          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+            <div class="sectionTitle">
+              <h3>Highscore (Top 10)</h3>
+              <button class="ghost miniBtn" id="refreshHsBtn" type="button">↻</button>
+            </div>
+
+            <div class="twoCol" style="margin-top:10px;">
+              <div>
+                <div class="muted" style="font-weight:900; margin-bottom:6px;">Kleines 1×1</div>
+                <div id="hsSmall" class="muted">—</div>
+              </div>
+              <div>
+                <div class="muted" style="font-weight:900; margin-bottom:6px;">Großes 1×1</div>
+                <div id="hsBig" class="muted">—</div>
+              </div>
+            </div>
+
+            <div class="muted" style="margin-top:10px; font-size:.9rem;">
+              Sortierung: nach <strong>richtigen Antworten</strong> (einzelner Durchgang).
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://dnlencbwbbriijmzijci.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_G8SaY8-oyn7TcP-uH6neuA_PNqUR1x0";
+
+    const FN_STUDENT_LOGIN = "https://dnlencbwbbriijmzijci.functions.supabase.co/student_login";
+    const FN_GET_HIGHSCORES = "https://dnlencbwbbriijmzijci.functions.supabase.co/get_highscores";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const DURATION = 120;
+    const $ = (id) => document.getElementById(id);
+
+    function dedupeBestByName(list, scoreKeyCandidates = ["correct","score","correct_count","trees"]) {
+      const best = new Map(); // name -> {name, score}
+      for (const r of (list || [])) {
+        const name = String(r?.name ?? r?.display_name ?? "—");
+        let score = 0;
+        for (const k of scoreKeyCandidates) {
+          if (r != null && r[k] != null && !Number.isNaN(Number(r[k]))) { score = Number(r[k]); break; }
+        }
+        const prev = best.get(name);
+        if (!prev || score > prev.score) best.set(name, { name, score });
+      }
+      return Array.from(best.values())
+        .sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name))
+        .slice(0,10);
+    }
+
+    const loginMsg = $("loginMsg");
+    const fb = $("fb");
+
+    let studentId = null;
+    let studentName = null;
+
+    let selectedMode = "small"; // "small" | "big"
+    let max = 10;
+
+    let t = DURATION;
+    let timer = null;
+
+    let right = 0;
+    let wrong = 0;
+    let streak = 0;
+    let bestStreak = 0;
+
+    let a = 0, b = 0;
+
+    function showMsg(el, ok, text) {
+      el.style.display = "block";
+      el.className = "feedback " + (ok ? "ok" : "bad");
+      el.innerHTML = text;
+    }
+
+    function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+    function setMode(mode){
+      selectedMode = mode;
+      $("smallBtn").classList.toggle("active", mode === "small");
+      $("bigBtn").classList.toggle("active", mode === "big");
+    }
+
+    function updateAccUI() {
+      const total = right + wrong;
+      const acc = total > 0 ? (right / total) : 0;
+      $("acc").textContent = Math.round(acc * 100) + "%";
+      $("right").textContent = String(right);
+      $("wrong").textContent = String(wrong);
+      $("streak").textContent = String(streak);
+    }
+
+    function newTask(){
+      a = randInt(1, max);
+      b = randInt(1, max);
+      $("task").textContent = `${a} × ${b} = ?`;
+      $("answer").value = "";
+      $("answer").focus();
+    }
+
+    function tick(){
+      t -= 1;
+      $("time").textContent = String(t);
+      if (t <= 0) stop();
+    }
+
+    async function startRun(){
+      // Start erst auf Knopfdruck
+      max = selectedMode === "small" ? 10 : 20;
+
+      t = DURATION;
+      right = 0;
+      wrong = 0;
+      streak = 0;
+      bestStreak = 0;
+
+      $("time").textContent = String(DURATION);
+      fb.style.display = "none";
+
+      updateAccUI();
+
+      $("startBar").style.display = "none";
+      $("runArea").style.display = "block";
+
+      newTask();
+
+      if (timer) clearInterval(timer);
+      timer = setInterval(tick, 1000);
+    }
+
+    function check(){
+      const raw = $("answer").value.trim();
+      if (!/^\d+$/.test(raw)) { showMsg(fb, false, "⚠️ Bitte nur Ziffern eingeben."); return; }
+
+      const ans = Number(raw);
+      const correct = a * b;
+
+      if (ans === correct) {
+        right += 1;
+        streak += 1;
+        bestStreak = Math.max(bestStreak, streak);
+        showMsg(fb, true, "✅ Richtig!");
+      } else {
+        wrong += 1;
+        streak = 0;
+        showMsg(fb, false, `❌ Falsch. Richtig wäre <strong>${correct}</strong>.`);
+      }
+
+      updateAccUI();
+      newTask();
+    }
+
+    async function stop(){
+      if (timer) clearInterval(timer);
+      timer = null;
+
+      $("runArea").style.display = "none";
+      $("startBar").style.display = "flex";
+
+      const total = right + wrong;
+      const accuracy = total > 0 ? (right / total) : 0;
+
+      const { error } = await supabase.from("attempts").insert({
+        student_id: studentId,
+        mode: selectedMode,
+        correct_count: right,
+        wrong_count: wrong,
+        total_count: total,
+        accuracy: accuracy,
+        duration_seconds: DURATION
+      });
+
+      if (error) {
+        showMsg(loginMsg, false, `Speichern fehlgeschlagen: ${error.message}`);
+      } else {
+        showMsg(
+          loginMsg,
+          true,
+          `✅ Gespeichert: Richtig <strong>${right}</strong>, Falsch <strong>${wrong}</strong>, Accuracy <strong>${Math.round(accuracy*100)}%</strong> (${selectedMode === "small" ? "klein" : "groß"})`
+        );
+      }
+
+      await loadHistory();
+      await loadHighscores();
+    }
+
+    async function loadHistory(){
+      $("statsBox").textContent = "Lade Statistik…";
+      $("historyBox").textContent = "Lade Verlauf…";
+
+      const { data, error } = await supabase
+        .from("attempts")
+        .select("mode,correct_count,wrong_count,total_count,accuracy,created_at")
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (error) {
+        $("statsBox").innerHTML = `<div class="bad">Fehler: ${error.message}</div>`;
+        $("historyBox").textContent = "—";
+        return;
+      }
+
+      const attempts = data || [];
+      if (!attempts.length) {
+        $("statsBox").innerHTML = `<div class="muted">Noch keine Versuche gespeichert.</div>`;
+        $("historyBox").textContent = "—";
+        return;
+      }
+
+      const bestCorrect = attempts.reduce((m,a)=>Math.max(m,a.correct_count),0);
+      const bestAcc = attempts.reduce((m,a)=>Math.max(m,Number(a.accuracy ?? 0)),0);
+      const last5 = attempts.slice(0,5);
+      const avgAcc5 = last5.length ? (last5.reduce((s,a)=>s+Number(a.accuracy ?? 0),0)/last5.length) : 0;
+
+      $("statsBox").innerHTML = `
+        <div class="ok">
+          Bestwert richtig: <strong>${bestCorrect}</strong>
+          &nbsp;|&nbsp; Beste Accuracy: <strong>${Math.round(bestAcc*100)}%</strong>
+          &nbsp;|&nbsp; Ø Accuracy letzte 5: <strong>${Math.round(avgAcc5*100)}%</strong>
+        </div>
+      `;
+
+      $("historyBox").innerHTML = `
+        <table>
+          <thead><tr><th>Datum</th><th>Modus</th><th>Richtig</th><th>Falsch</th><th>Accuracy</th></tr></thead>
+          <tbody>
+            ${attempts.map(a => {
+              const d = new Date(a.created_at).toLocaleString("de-AT");
+              const acc = Math.round(Number(a.accuracy ?? 0) * 100) + "%";
+              return `<tr>
+                <td class="muted">${d}</td>
+                <td>${a.mode === "small" ? "Klein" : "Groß"}</td>
+                <td><strong>${a.correct_count}</strong></td>
+                <td>${a.wrong_count ?? 0}</td>
+                <td class="muted">${acc}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderHS(targetId, list){
+      const el = $(targetId);
+
+      // ✅ Mini-Filter: pro Name nur die beste Leistung
+      const filtered = dedupeBestByName(list, ["correct","score","correct_count"])
+        .map(x => ({ name: x.name, correct: x.score }));
+
+      if (!filtered.length) {
+        el.innerHTML = `<div class="muted">Noch keine Einträge.</div>`;
+        return;
+      }
+
+      el.innerHTML = `
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Richtig</th></tr></thead>
+          <tbody>
+            ${filtered.map((r, i) => `
+              <tr>
+                <td class="muted">${i+1}</td>
+                <td><strong>${String(r.name || "—")}</strong></td>
+                <td>${Number(r.correct || 0)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadHighscores(){
+      $("hsSmall").textContent = "Lade…";
+      $("hsBig").textContent = "Lade…";
+
+      try {
+        const res = await fetch(FN_GET_HIGHSCORES, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({})
+        });
+
+        const json = await res.json();
+        if (!res.ok || !json.ok) {
+          $("hsSmall").innerHTML = `<div class="bad">Highscore-Fehler</div>`;
+          $("hsBig").innerHTML = `<div class="bad">Highscore-Fehler</div>`;
+          return;
+        }
+
+        renderHS("hsSmall", json.small);
+        renderHS("hsBig", json.big);
+      } catch (e) {
+        $("hsSmall").innerHTML = `<div class="bad">Netzwerkfehler</div>`;
+        $("hsBig").innerHTML = `<div class="bad">Netzwerkfehler</div>`;
+      }
+    }
+
+    async function codeLogin(){
+      const code = $("code").value.trim().toUpperCase();
+      if (!code) { showMsg(loginMsg, false, "Bitte Code eingeben."); return; }
+
+      try {
+        // 1) Ensure Auth-User exists + Student-Daten holen
+        const res = await fetch(FN_STUDENT_LOGIN, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY },
+          body: JSON.stringify({ code })
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          showMsg(loginMsg, false, `❌ ${json.error || "Fehler"}${json.details ? " – " + json.details : ""}`);
+          return;
+        }
+
+        const email = json.email;
+        studentId = json.student.id;
+        studentName = json.student.display_name;
+
+        // 2) Login per Code (password)
+        const { error: signErr } = await supabase.auth.signInWithPassword({ email, password: code });
+        if (signErr) {
+          showMsg(loginMsg, false, `Login fehlgeschlagen: ${signErr.message}`);
+          return;
+        }
+
+        $("studentName").textContent = studentName;
+        $("logoutBtn").style.display = "inline-block";
+        $("gameCard").style.display = "block";
+
+        // Default layout: Start sichtbar, run aus
+        $("startBar").style.display = "flex";
+        $("runArea").style.display = "none";
+
+        showMsg(loginMsg, true, `✅ Willkommen, <strong>${studentName}</strong>!`);
+
+        await loadHistory();
+        await loadHighscores();
+      } catch (e) {
+        showMsg(loginMsg, false, `Netzwerkfehler: ${String(e)}`);
+      }
+    }
+
+    async function logout(){
+      studentId = null;
+      studentName = null;
+      $("logoutBtn").style.display = "none";
+      $("gameCard").style.display = "none";
+      await supabase.auth.signOut();
+      showMsg(loginMsg, true, "Abgemeldet.");
+    }
+
+    // UI events
+    $("loginBtn").addEventListener("click", codeLogin);
+    $("code").addEventListener("keydown", (e) => { if (e.key === "Enter") codeLogin(); });
+    $("logoutBtn").addEventListener("click", logout);
+
+    $("smallBtn").addEventListener("click", () => setMode("small"));
+    $("bigBtn").addEventListener("click", () => setMode("big"));
+
+    $("startBtn").addEventListener("click", startRun);
+
+    $("okBtn").addEventListener("click", check);
+    $("stopBtn").addEventListener("click", stop);
+    $("answer").addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+
+    $("refreshMeBtn").addEventListener("click", loadHistory);
+    $("refreshHsBtn").addEventListener("click", loadHighscores);
+
+    // init
+    setMode("small");
+  </script>
+</body>
+</html>

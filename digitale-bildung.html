@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Digitale Bildung – Spiele</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 980px; margin:0 auto; padding:24px; }
+    header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+    h1 { margin:0; font-size:1.4rem; }
+    .card { background:#fff; border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); margin-top:14px; }
+    .grid { display:grid; gap:14px; grid-template-columns: 1fr; margin-top:14px; }
+    @media (min-width: 860px){ .grid { grid-template-columns: 1fr 1fr 1fr; } }
+    a.btn { display:block; padding:14px; border-radius:14px; background:#1f6feb; color:#fff; text-decoration:none; font-weight:900; }
+    .muted { opacity:.8; margin-top:10px; }
+    a.ghost { text-decoration:none; padding:10px 14px; border-radius:10px; background:#e5e7eb; color:#111; font-weight:800; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Digitale Bildung – Spiele (Binärsystem)</h1>
+      <a class="ghost" href="./index.html">← Startseite</a>
+    </header>
+
+    <div class="card">
+      <p class="muted" style="margin:0;">
+        Wähle ein Spiel:
+      </p>
+
+      <div class="grid">
+        <a class="btn" href="./BinaerPro.html">
+          BinaerPro
+          <div class="muted">Dein zusätzliches Binär-Spiel</div>
+        </a>
+
+        <a class="btn" href="./spiel1.html">
+          Spiel 1
+          <div class="muted">Binär-Quest (Random / Quiz)</div>
+        </a>
+
+        <a class="btn" href="./spiel2.html">
+          Spiel 2
+          <div class="muted">Binär-Blitz (Timer)</div>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

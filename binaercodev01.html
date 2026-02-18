@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Binär-Quest – Quiz mit Lehrermodus</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background: #f6f7fb; color: #111; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px; }
+    header { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: 1.35rem; }
+    h2 { margin: 0 0 10px; font-size: 1.15rem; }
+    .card { background: #fff; border-radius: 14px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+    .row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+    .pill { padding: 6px 10px; border-radius: 999px; background: #eef2ff; font-weight: 700; }
+    .question { font-size: 1.2rem; margin: 8px 0 12px; }
+    .hint { margin: 0 0 14px; color: #333; opacity: .85; }
+    input[type="text"], input[type="password"], textarea{
+      font-size: 1.0rem; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid #ccd2e1;
+    }
+    input[type="text"], input[type="password"]{ min-width: 240px; }
+    textarea{ width: 100%; min-height: 240px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    button{
+      padding: 10px 14px; border-radius: 10px; border: 0;
+      background: #1f6feb; color: #fff; font-weight: 800; cursor: pointer;
+    }
+    button.secondary{ background: #111827; }
+    button.ghost{ background: #e5e7eb; color: #111; }
+    button:disabled{ opacity: .55; cursor: not-allowed; }
+    .feedback{ margin-top: 12px; padding: 12px; border-radius: 10px; }
+    .ok{ background: #ecfdf5; border: 1px solid #10b98144; }
+    .bad{ background: #fef2f2; border: 1px solid #ef444444; }
+    .small{ font-size: .92rem; opacity: .88; }
+    .muted{ opacity: .75; }
+    code.kbd { background: #111827; color: #fff; padding: 2px 6px; border-radius: 6px; }
+    .grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 900px){ .grid { grid-template-columns: 1.25fr .75fr; } }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e5e7eb; }
+    th { font-size: .9rem; opacity: .9; }
+    .tag { display:inline-block; font-size:.85rem; padding: 2px 8px; border-radius:999px; background:#f3f4f6; }
+    .danger { background:#fee2e2; color:#111; }
+    .success { background:#dcfce7; color:#111; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Binär-Quest 🧠⚡ (5. Schulstufe)</h1>
+      <div class="row" id="statusBar" style="display:none;">
+        <div class="pill">Name: <span id="playerNameTop">—</span></div>
+        <div class="pill">Frage: <span id="qIndex">1</span>/<span id="qTotal">10</span></div>
+        <div class="pill">Punkte: <span id="score">0</span></div>
+      </div>
+    </header>
+
+    <div class="grid" style="margin-top:14px;">
+      <!-- LEFT -->
+      <div>
+        <div class="card" id="introCard">
+          <div class="row" style="justify-content:space-between;">
+            <h2 style="margin:0;">Kurze Erklärung: Binärsystem</h2>
+            <button id="openTeacherBtn" class="ghost">Lehrermodus</button>
+          </div>
+
+          <p>
+            Im <strong>Binärsystem</strong> gibt es nur <code class="kbd">0</code> und <code class="kbd">1</code>.
+            Jede Stelle hat einen <strong>Stellenwert</strong> (von rechts): 1, 2, 4, 8, 16, 32, 64, …
+          </p>
+          <p class="small">
+            Eine <code class="kbd">1</code> bedeutet: „Diesen Stellenwert mitzählen“. Eine <code class="kbd">0</code> bedeutet: „Nicht mitzählen“.
+          </p>
+
+          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; margin-top:12px;">
+            <strong>Beispiele (kommen NICHT im Quiz vor):</strong>
+            <ul style="margin:10px 0 0;">
+              <li><code class="kbd">6</code> (dezimal) = <code class="kbd">110</code> (binär) → 4 + 2 = 6</li>
+              <li><code class="kbd">12</code> (dezimal) = <code class="kbd">1100</code> (binär) → 8 + 4 = 12</li>
+              <li><code class="kbd">100000</code> (binär) = <code class="kbd">32</code> (dezimal)</li>
+            </ul>
+            <p class="small muted" style="margin:10px 0 0;">
+              Führende Nullen ändern den Wert nicht: <code class="kbd">101</code> = <code class="kbd">00000101</code>.
+            </p>
+          </div>
+
+          <div class="row" style="margin-top:14px;">
+            <label class="small"><strong>Name:</strong></label>
+            <input id="nameInput" type="text" maxlength="20" placeholder="z.B. Alex" />
+            <button id="startBtn">Spiel starten</button>
+          </div>
+
+          <p class="small muted" style="margin-top:10px;">
+            Punkte-Regel: Pro Frage gibt’s nur dann einen Punkt, wenn du sie <strong>beim 1. Versuch</strong> richtig löst.
+            Nach einem Fehler darfst du weiter probieren, bekommst aber für diese Frage dann <strong>keinen Punkt mehr</strong>.
+          </p>
+        </div>
+
+        <div class="card" id="teacherCard" style="display:none; margin-top:14px;">
+          <div class="row" style="justify-content:space-between;">
+            <h2 style="margin:0;">Lehrermodus</h2>
+            <button id="closeTeacherBtn" class="ghost">Schließen</button>
+          </div>
+
+          <p class="small muted" style="margin-top:8px;">
+            Hier kannst du Fragen + Einstellungen anpassen. Änderungen werden im Browser gespeichert (dieses Gerät).
+          </p>
+
+          <div id="teacherLocked">
+            <div class="row">
+              <input id="teacherPin" type="password" placeholder="PIN eingeben" />
+              <button id="unlockTeacherBtn">Entsperren</button>
+            </div>
+            <p class="small muted" style="margin-top:8px;">
+              Tipp: PIN kannst du im Code oben ändern (<code class="kbd">TEACHER_PIN</code>).
+            </p>
+          </div>
+
+          <div id="teacherUnlocked" style="display:none;">
+            <div class="card" style="box-shadow:none; border:1px solid #e5e7eb;">
+              <div class="row" style="justify-content:space-between;">
+                <strong>Einstellungen</strong>
+                <span class="tag">JSON bearbeiten</span>
+              </div>
+              <p class="small muted" style="margin:8px 0 10px;">
+                Wichtig: Ab Frage <strong>4</strong> werden Hinweise automatisch ausgeblendet (einstellbar über <code class="kbd">hintsUntilQuestion</code>).
+              </p>
+              <textarea id="teacherJson"></textarea>
+              <div class="row" style="margin-top:10px;">
+                <button id="saveTeacherBtn" class="secondary">Speichern</button>
+                <button id="resetTeacherBtn" class="ghost">Standard wiederherstellen</button>
+                <span id="teacherMsg" class="small muted"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="gameCard" style="display:none; margin-top:14px;">
+          <div class="question" id="questionText">…</div>
+          <p class="hint" id="hintText">…</p>
+
+          <div class="row">
+            <input id="answerInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Antwort…" />
+            <button id="checkBtn">Prüfen</button>
+            <button id="nextBtn" class="secondary" disabled>Weiter ▶</button>
+            <button id="restartBtn" class="ghost" title="Neustart">Neu starten</button>
+          </div>
+
+          <div id="feedback" class="feedback" style="display:none;"></div>
+          <p class="small muted" style="margin-top:12px;">
+            Tipp: Bei Binärantworten nur 0/1 (ohne Leerzeichen). Führende Nullen sind erlaubt.
+          </p>
+        </div>
+
+        <div class="card" id="resultCard" style="display:none; margin-top:14px;">
+          <h2>Ergebnis</h2>
+          <p id="resultText" style="font-size:1.05rem; margin:0 0 12px;"></p>
+          <div id="review"></div>
+          <div class="row" style="margin-top:12px;">
+            <button id="playAgainBtn" class="secondary">Nochmal spielen</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <h2 style="margin:0;">Highscore</h2>
+          <span class="tag">gespeichert im Browser</span>
+        </div>
+        <p class="small muted" style="margin:8px 0 12px;">Top-10 auf diesem Gerät/Browser (LocalStorage).</p>
+        <div id="highscoreBox" class="small muted">—</div>
+        <div class="row" style="margin-top:12px;">
+          <button id="clearScoresBtn" class="ghost">Highscore löschen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ===========================
+  // 1) Lehr-PIN (hier ändern)
+  // ===========================
+  const TEACHER_PIN = "1234";
+
+  // ===========================
+  // 2) Standard-Config
+  // ===========================
+  const DEFAULT_CONFIG = {
+    // Hinweise werden bis inkl. Frage X angezeigt (ab X+1 verschwinden sie)
+    // Für deinen Wunsch: ab Frage 4 keine Hinweise => hintsUntilQuestion = 3
+    hintsUntilQuestion: 3,
+
+    // Fragenliste (aufsteigende Schwierigkeit)
+    questions: [
+      { type: "dec2bin", value: 5,   prompt: "Wandle 5 in Binär um.",                    hint: "Stellenwerte: 4,2,1" },
+      { type: "dec2bin", value: 9,   prompt: "Wandle 9 in Binär um.",                    hint: "9 = 8 + 1" },
+      { type: "dec2bin", value: 13,  prompt: "Wandle 13 in Binär um.",                   hint: "13 = 8 + 4 + 1" },
+      { type: "dec2bin", value: 18,  prompt: "Wandle 18 in Binär um.",                   hint: "18 = 16 + 2" },
+
+      { type: "bin2dec", value: "1010",     prompt: "Wandle 1010 in Dezimal um.",        hint: "8 + 2" },
+      { type: "bin2dec", value: "110011",   prompt: "Wandle 110011 in Dezimal um.",      hint: "32,16,8,4,2,1" },
+      { type: "bin2dec", value: "1001110",  prompt: "Wandle 1001110 in Dezimal um.",     hint: "64,32,16,8,4,2,1" },
+
+      { type: "dec2bin", value: 42,  prompt: "Wandle 42 in Binär um.",                   hint: "42 = 32 + 8 + 2" },
+      { type: "bin2dec", value: "11101001", prompt: "Wandle 11101001 in Dezimal um.",    hint: "128,64,32,16,8,4,2,1" },
+      { type: "dec2bin", value: 127, prompt: "Wandle 127 in Binär um.",                  hint: "1 weniger als 128." }
+    ]
+  };
+
+  // ===========================
+  // 3) Config Storage
+  // ===========================
+  const CFG_KEY = "binaerquest_config_v1";
+  const SCORE_KEY = "binaerquest_highscores_v1";
+
+  function loadConfig() {
+    try {
+      const raw = localStorage.getItem(CFG_KEY);
+      const cfg = raw ? JSON.parse(raw) : null;
+      if (!cfg || !Array.isArray(cfg.questions)) return structuredClone(DEFAULT_CONFIG);
+      return cfg;
+    } catch {
+      return structuredClone(DEFAULT_CONFIG);
+    }
+  }
+  function saveConfig(cfg) { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+
+  let config = loadConfig();
+  let questions = config.questions;
+
+  // ===========================
+  // 4) Highscore
+  // ===========================
+  function loadScores() {
+    try {
+      const raw = localStorage.getItem(SCORE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  }
+  function saveScores(scores) { localStorage.setItem(SCORE_KEY, JSON.stringify(scores)); }
+  function addScore(name, score, total) {
+    const scores = loadScores();
+    scores.push({ name, score, total, ts: Date.now() });
+    scores.sort((a,b) => (b.score - a.score) || (a.ts - b.ts));
+    saveScores(scores.slice(0, 10));
+    renderHighscores();
+  }
+  function renderHighscores() {
+    const box = document.getElementById("highscoreBox");
+    const scores = loadScores();
+    if (!scores.length) { box.innerHTML = "<span class='muted'>Noch keine Einträge.</span>"; return; }
+    box.innerHTML = `
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Punkte</th><th>Datum</th></tr></thead>
+        <tbody>
+          ${scores.map((s,i) => {
+            const d = new Date(s.ts);
+            const date = d.toLocaleDateString("de-AT", { year:"numeric", month:"2-digit", day:"2-digit" });
+            return `<tr>
+              <td>${i+1}.</td>
+              <td><strong>${escapeHtml(s.name)}</strong></td>
+              <td>${s.score}/${s.total}</td>
+              <td class="muted">${date}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>`;
+  }
+
+  // ===========================
+  // 5) Helpers
+  // ===========================
+  const decToBin = (n) => n.toString(2);
+  const binToDec = (b) => parseInt(b, 2);
+  const normalizeBinary = (s) => s.replace(/\s+/g, "");
+  const normalizeNumber = (s) => s.trim();
+  const isValidBinary = (s) => /^[01]+$/.test(s);
+  const isValidDecimal = (s) => /^\d+$/.test(s);
+
+  // Für "101" == "00000101": wir vergleichen den WERT
+  function isCorrectAnswer(q, raw) {
+    if (q.type === "dec2bin") {
+      const s = normalizeBinary(raw);
+      if (!isValidBinary(s)) return { valid:false };
+      return { valid:true, ok: binToDec(s) === Number(q.value) };
+    } else {
+      const s = normalizeNumber(raw);
+      if (!isValidDecimal(s)) return { valid:false };
+      return { valid:true, ok: Number(s) === binToDec(String(q.value)) };
+    }
+  }
+  function expectedDisplay(q) {
+    return (q.type === "dec2bin") ? decToBin(Number(q.value)) : String(binToDec(String(q.value)));
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  // ===========================
+  // 6) State
+  // ===========================
+  let idx = 0;
+  let score = 0;
+  let playerName = "";
+  let firstTryStillPossible = true;
+  const history = []; // {prompt, correct, user, ok, tries, gotPoint}
+
+  // ===========================
+  // 7) UI refs
+  // ===========================
+  const statusBar = document.getElementById("statusBar");
+  const playerNameTop = document.getElementById("playerNameTop");
+  const qIndexEl = document.getElementById("qIndex");
+  const qTotalEl = document.getElementById("qTotal");
+  const scoreEl = document.getElementById("score");
+
+  const introCard = document.getElementById("introCard");
+  const teacherCard = document.getElementById("teacherCard");
+  const teacherLocked = document.getElementById("teacherLocked");
+  const teacherUnlocked = document.getElementById("teacherUnlocked");
+  const teacherJson = document.getElementById("teacherJson");
+  const teacherMsg = document.getElementById("teacherMsg");
+
+  const gameCard = document.getElementById("gameCard");
+  const resultCard = document.getElementById("resultCard");
+
+  const nameInput = document.getElementById("nameInput");
+  const startBtn = document.getElementById("startBtn");
+
+  const questionTextEl = document.getElementById("questionText");
+  const hintTextEl = document.getElementById("hintText");
+  const answerInput = document.getElementById("answerInput");
+  const checkBtn = document.getElementById("checkBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const feedbackEl = document.getElementById("feedback");
+
+  const resultText = document.getElementById("resultText");
+  const reviewEl = document.getElementById("review");
+  const playAgainBtn = document.getElementById("playAgainBtn");
+
+  const openTeacherBtn = document.getElementById("openTeacherBtn");
+  const closeTeacherBtn = document.getElementById("closeTeacherBtn");
+  const teacherPin = document.getElementById("teacherPin");
+  const unlockTeacherBtn = document.getElementById("unlockTeacherBtn");
+  const saveTeacherBtn = document.getElementById("saveTeacherBtn");
+  const resetTeacherBtn = document.getElementById("resetTeacherBtn");
+
+  const clearScoresBtn = document.getElementById("clearScoresBtn");
+
+  // ===========================
+  // 8) Game functions
+  // ===========================
+  function currentQuestion() { return questions[idx]; }
+
+  function setFeedback(ok, msg) {
+    feedbackEl.style.display = "block";
+    feedbackEl.className = "feedback " + (ok ? "ok" : "bad");
+    feedbackEl.innerHTML = msg;
+  }
+
+  function renderQuestion() {
+    qTotalEl.textContent = String(questions.length);
+    qIndexEl.textContent = String(idx + 1);
+    scoreEl.textContent = String(score);
+
+    const q = currentQuestion();
+    questionTextEl.textContent = q.prompt;
+
+    // HINWEISE: nur bis inkl. config.hintsUntilQuestion (z.B. 3). Ab Frage 4 -> weg.
+    const showHint = (idx + 1) <= Number(config.hintsUntilQuestion);
+    if (showHint && q.hint) {
+      hintTextEl.style.display = "block";
+      hintTextEl.textContent = "Hinweis: " + q.hint;
+    } else {
+      hintTextEl.style.display = "none";
+      hintTextEl.textContent = "";
+    }
+
+    feedbackEl.style.display = "none";
+    answerInput.value = "";
+    answerInput.focus();
+
+    nextBtn.disabled = true;
+    checkBtn.disabled = false;
+
+    firstTryStillPossible = true;
+
+    answerInput.placeholder = (q.type === "dec2bin")
+      ? "Binär (z.B. 101 oder 00000101)…"
+      : "Dezimal (z.B. 10)…";
+  }
+
+  function finishGame() {
+    addScore(playerName, score, questions.length);
+
+    gameCard.style.display = "none";
+    resultCard.style.display = "block";
+
+    const percent = Math.round((score / questions.length) * 100);
+    resultText.textContent = `${playerName}: ${score}/${questions.length} Punkte (${percent}%).`;
+
+    reviewEl.innerHTML = history.map((h, i) => {
+      const icon = h.ok ? "✅" : "❌";
+      const pointTxt = h.gotPoint ? " (+1 Punkt)" : " (0 Punkte)";
+      return `<div style="margin:6px 0; padding:10px; border-radius:10px; background:#f3f4f6;">
+        <strong>${icon} Frage ${i+1}:</strong> ${escapeHtml(h.prompt)}<br/>
+        <span class="small">
+          Versuche: <strong>${h.tries}</strong>${pointTxt}<br/>
+          Deine letzte Antwort: <code class="kbd">${escapeHtml(h.user)}</code> — Richtig (eine mögliche Schreibweise): <code class="kbd">${escapeHtml(h.correct)}</code>
+        </span>
+      </div>`;
+    }).join("");
+  }
+
+  function checkAnswer() {
+    const q = currentQuestion();
+    const raw = answerInput.value;
+
+    if (!history[idx]) {
+      history[idx] = { prompt: q.prompt, correct: expectedDisplay(q), user: "", ok: false, tries: 0, gotPoint: false };
+    }
+    const h = history[idx];
+    h.tries += 1;
+
+    const res = isCorrectAnswer(q, raw);
+    if (!res.valid) {
+      setFeedback(false, `⚠️ Bitte gültig eingeben. ${
+        q.type === "dec2bin" ? "Binär: nur 0 und 1." : "Dezimal: nur Ziffern."
+      }`);
+      return;
+    }
+
+    h.user = (q.type === "dec2bin") ? normalizeBinary(raw) : normalizeNumber(raw);
+
+    if (res.ok) {
+      h.ok = true;
+      if (firstTryStillPossible) {
+        score += 1;
+        h.gotPoint = true;
+        setFeedback(true, `✅ Richtig! <strong>+1 Punkt</strong>. (z.B. <code class="kbd">${expectedDisplay(q)}</code>)`);
+      } else {
+        h.gotPoint = false;
+        setFeedback(true, `✅ Richtig! (Nach einem Fehler gibt es für diese Frage keine Punkte mehr.)`);
+      }
+      scoreEl.textContent = String(score);
+      checkBtn.disabled = true;
+      nextBtn.disabled = false;
+    } else {
+      firstTryStillPossible = false;
+      h.ok = false;
+      setFeedback(false, `❌ Noch nicht. Versuch es nochmal! (Für diese Frage sind jetzt <strong>keine Punkte</strong> mehr möglich.)`);
+      answerInput.focus();
+      answerInput.select();
+      nextBtn.disabled = true;
+    }
+  }
+
+  function nextQuestion() {
+    if (idx < questions.length - 1) {
+      idx += 1;
+      renderQuestion();
+    } else {
+      finishGame();
+    }
+  }
+
+  function startGame() {
+    playerName = nameInput.value.trim() || "Unbekannt";
+    playerNameTop.textContent = playerName;
+
+    introCard.style.display = "none";
+    teacherCard.style.display = "none";
+    resultCard.style.display = "none";
+    gameCard.style.display = "block";
+    statusBar.style.display = "flex";
+
+    // Reload config (falls Lehrermodus gerade gespeichert hat)
+    config = loadConfig();
+    questions = config.questions;
+
+    idx = 0; score = 0; history.length = 0;
+    renderQuestion();
+  }
+
+  function restartToIntro() {
+    statusBar.style.display = "none";
+    introCard.style.display = "block";
+    gameCard.style.display = "none";
+    resultCard.style.display = "none";
+  }
+
+  // ===========================
+  // 9) Lehrermodus functions
+  // ===========================
+  function openTeacher() {
+    teacherCard.style.display = "block";
+    teacherLocked.style.display = "block";
+    teacherUnlocked.style.display = "none";
+    teacherPin.value = "";
+    teacherMsg.textContent = "";
+    teacherJson.value = "";
+    teacherPin.focus();
+  }
+
+  function closeTeacher() { teacherCard.style.display = "none"; }
+
+  function unlockTeacher() {
+    if (teacherPin.value !== TEACHER_PIN) {
+      teacherMsg.textContent = "❌ Falsche PIN.";
+      teacherMsg.className = "small danger";
+      return;
+    }
+    teacherMsg.textContent = "✅ Entsperrt.";
+    teacherMsg.className = "small success";
+    teacherLocked.style.display = "none";
+    teacherUnlocked.style.display = "block";
+    teacherJson.value = JSON.stringify(loadConfig(), null, 2);
+  }
+
+  function validateConfig(cfg) {
+    if (!cfg || typeof cfg !== "object") return "Config ist kein Objekt.";
+    if (!Number.isInteger(cfg.hintsUntilQuestion) || cfg.hintsUntilQuestion < 0) return "hintsUntilQuestion muss eine Zahl (>=0) sein.";
+    if (!Array.isArray(cfg.questions) || cfg.questions.length < 1) return "questions muss ein Array mit mind. 1 Frage sein.";
+    for (const [i,q] of cfg.questions.entries()) {
+      if (!q || typeof q !== "object") return `Frage ${i+1} ist kein Objekt.`;
+      if (!["dec2bin","bin2dec"].includes(q.type)) return `Frage ${i+1}: type muss "dec2bin" oder "bin2dec" sein.`;
+      if (typeof q.prompt !== "string" || !q.prompt.trim()) return `Frage ${i+1}: prompt fehlt.`;
+      if (q.type === "dec2bin") {
+        if (typeof q.value !== "number" || !Number.isInteger(q.value) || q.value < 0) return `Frage ${i+1}: value muss eine ganze Zahl (>=0) sein.`;
+      } else {
+        const v = String(q.value);
+        if (!/^[01]+$/.test(v)) return `Frage ${i+1}: value muss eine Binärzahl (nur 0/1) sein.`;
+      }
+      if (q.hint != null && typeof q.hint !== "string") return `Frage ${i+1}: hint muss Text sein (oder weglassen).`;
+    }
+    return null;
+  }
+
+  function saveTeacher() {
+    let cfg;
+    try {
+      cfg = JSON.parse(teacherJson.value);
+    } catch {
+      teacherMsg.textContent = "❌ JSON ist ungültig.";
+      teacherMsg.className = "small danger";
+      return;
+    }
+    const err = validateConfig(cfg);
+    if (err) {
+      teacherMsg.textContent = "❌ " + err;
+      teacherMsg.className = "small danger";
+      return;
+    }
+    saveConfig(cfg);
+    config = cfg;
+    questions = cfg.questions;
+    teacherMsg.textContent = "✅ Gespeichert.";
+    teacherMsg.className = "small success";
+    qTotalEl.textContent = String(questions.length);
+  }
+
+  function resetTeacher() {
+    saveConfig(structuredClone(DEFAULT_CONFIG));
+    teacherJson.value = JSON.stringify(loadConfig(), null, 2);
+    teacherMsg.textContent = "✅ Standard wiederhergestellt.";
+    teacherMsg.className = "small success";
+  }
+
+  // ===========================
+  // 10) Events
+  // ===========================
+  startBtn.addEventListener("click", startGame);
+  nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
+
+  checkBtn.addEventListener("click", checkAnswer);
+  nextBtn.addEventListener("click", nextQuestion);
+
+  restartBtn.addEventListener("click", restartToIntro);
+  playAgainBtn.addEventListener("click", restartToIntro);
+
+  answerInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !checkBtn.disabled) checkAnswer();
+    else if (e.key === "Enter" && !nextBtn.disabled) nextQuestion();
+  });
+
+  openTeacherBtn.addEventListener("click", openTeacher);
+  closeTeacherBtn.addEventListener("click", closeTeacher);
+  unlockTeacherBtn.addEventListener("click", unlockTeacher);
+  teacherPin.addEventListener("keydown", (e) => { if (e.key === "Enter") unlockTeacher(); });
+  saveTeacherBtn.addEventListener("click", saveTeacher);
+  resetTeacherBtn.addEventListener("click", resetTeacher);
+
+  clearScoresBtn.addEventListener("click", () => { localStorage.removeItem(SCORE_KEY); renderHighscores(); });
+
+  // Init
+  renderHighscores();
+  qTotalEl.textContent = String(questions.length);
+})();
+</script>
+</body>
+</html>
