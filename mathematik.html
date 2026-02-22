@@ -24,6 +24,15 @@
     .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:12px; }
     .feedback { margin-top:12px; display:none; }
 
+    #loginCard.compactLogin { padding:10px 14px; }
+    #loginCard.compactLogin h2 { display:none; }
+    #loginCard.compactLogin .muted { display:none; }
+    #loginCard.compactLogin #code,
+    #loginCard.compactLogin #loginBtn { display:none; }
+    #loginCard.compactLogin .row { justify-content:flex-end; }
+    #loginCard.compactLogin #logoutBtn { display:inline-flex !important; }
+
+
     .modeBar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .modeBtn { background:#e5e7eb; color:#111; }
     .modeBtn.active { background:#1f6feb; color:#fff; }
@@ -34,7 +43,10 @@
     .runGrid { display:grid; grid-template-columns: 1fr; gap:12px; margin-top:12px; }
     .statsRow { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
 
-    .taskBox { background:#f9fafb; border:1px solid #e5e7eb; border-radius:16px; padding:14px; }
+    .taskBox {
+      background:#f9fafb; border:1px solid #e5e7eb; border-radius:16px; padding:14px;
+      position: sticky; top: 8px; z-index: 6;
+    }
     .task { font-size:2rem; font-weight:1000; }
     .taskHint { margin-top:4px; }
 
@@ -191,6 +203,24 @@
 
     const loginMsg = $("loginMsg");
     const fb = $("fb");
+
+    let compactTimer = null;
+
+    function scheduleCompactLoginCard() {
+      if (compactTimer) clearTimeout(compactTimer);
+      compactTimer = setTimeout(() => {
+        $("loginCard").classList.add("compactLogin");
+      }, 3000);
+    }
+
+    function resetLoginCardCompact() {
+      if (compactTimer) {
+        clearTimeout(compactTimer);
+        compactTimer = null;
+      }
+      $("loginCard").classList.remove("compactLogin");
+    }
+
 
     let studentId = null;
     let studentName = null;
@@ -443,6 +473,8 @@
       const code = $("code").value.trim().toUpperCase();
       if (!code) { showMsg(loginMsg, false, "Bitte Code eingeben."); return; }
 
+      resetLoginCardCompact();
+
       try {
         // 1) Ensure Auth-User exists + Student-Daten holen
         const res = await fetch(FN_STUDENT_LOGIN, {
@@ -477,6 +509,7 @@
         $("runArea").style.display = "none";
 
         showMsg(loginMsg, true, `✅ Willkommen, <strong>${studentName}</strong>!`);
+        scheduleCompactLoginCard();
 
         await loadHistory();
         await loadHighscores();
@@ -490,6 +523,7 @@
       studentName = null;
       $("logoutBtn").style.display = "none";
       $("gameCard").style.display = "none";
+      resetLoginCardCompact();
       await supabase.auth.signOut();
       showMsg(loginMsg, true, "Abgemeldet.");
     }

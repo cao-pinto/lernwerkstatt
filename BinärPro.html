@@ -25,12 +25,24 @@
     .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:12px; }
     .feedback { margin-top:12px; display:none; }
 
+    #loginCard.compactLogin { padding:10px 14px; }
+    #loginCard.compactLogin h2 { display:none; }
+    #loginCard.compactLogin .muted { display:none; }
+    #loginCard.compactLogin #code,
+    #loginCard.compactLogin #loginBtn { display:none; }
+    #loginCard.compactLogin .row { justify-content:flex-end; }
+    #loginCard.compactLogin #logoutBtn { display:inline-flex !important; }
+
+
     .quizBox{
       background:#0b2230;
       border-radius:18px;
       border:1px solid #0b2230;
       padding:18px;
       color:#f5c400;
+      position: sticky;
+      top: 8px;
+      z-index: 7;
     }
     .question{
       font-size:1.35rem;
@@ -196,6 +208,24 @@
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const $ = (id) => document.getElementById(id);
+
+    let compactTimer = null;
+
+    function scheduleCompactLoginCard() {
+      if (compactTimer) clearTimeout(compactTimer);
+      compactTimer = setTimeout(() => {
+        $("loginCard").classList.add("compactLogin");
+      }, 3000);
+    }
+
+    function resetLoginCardCompact() {
+      if (compactTimer) {
+        clearTimeout(compactTimer);
+        compactTimer = null;
+      }
+      $("loginCard").classList.remove("compactLogin");
+    }
+
 
     const DURATION = 90;
 
@@ -603,6 +633,8 @@
       const code = $("code").value.trim().toUpperCase();
       if (!code) { showMsg($("loginMsg"), false, "Bitte Code eingeben."); return; }
 
+      resetLoginCardCompact();
+
       try{
         const res = await fetch(FN_STUDENT_LOGIN, {
           method: "POST",
@@ -632,6 +664,7 @@
         setRunningUI(false);
 
         showMsg($("loginMsg"), true, `✅ Willkommen, <strong>${json.student.display_name}</strong>!`);
+        scheduleCompactLoginCard();
         await loadHighscores();
       } catch(e){
         showMsg($("loginMsg"), false, `Netzwerkfehler: ${String(e)}`);
@@ -643,6 +676,7 @@
       $("logoutBtn").style.display = "none";
       $("gameCard").style.display = "none";
       $("runArea").style.display = "none";
+      resetLoginCardCompact();
       if (timer) clearInterval(timer);
       timer = null;
       running = false;
