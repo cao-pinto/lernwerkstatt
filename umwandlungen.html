@@ -194,7 +194,7 @@
 
     const DURATION = 120;
     const STREAK_BONUS_THRESHOLD = 3;
-    const STREAK_BONUS_SECONDS = 15;
+    const STREAK_BONUS_SECONDS = 5;
 
     const CATEGORIES = {
       length: {
@@ -204,8 +204,6 @@
           { symbol: "cm", p: -2 },
           { symbol: "dm", p: -1 },
           { symbol: "m", p: 0 },
-          { symbol: "dam", p: 1 },
-          { symbol: "hm", p: 2 },
           { symbol: "km", p: 3 }
         ]
       },
@@ -422,18 +420,34 @@
       $("hintCard").style.display = show ? "block" : "none";
       if (!show) return;
 
-      const units = CATEGORIES[selectedCategory].units;
-      const head = units.map((u, idx) => `<th class="${u.symbol === task.from.symbol || u.symbol === task.to.symbol ? "hl" : ""}">${escapeHtml(u.symbol)}</th>`).join("");
-      const power = units.map(u => `<td class="${u.symbol === task.from.symbol || u.symbol === task.to.symbol ? "hl" : ""}">10<sup>${u.p}</sup></td>`).join("");
+      // Hint table always shows biggest unit on the left, smallest on the right.
+      const units = [...CATEGORIES[selectedCategory].units].sort((a, b) => b.p - a.p);
+      const head = units.map((u) => `<th class="${u.symbol === task.from.symbol || u.symbol === task.to.symbol ? "hl" : ""}">${escapeHtml(u.symbol)}</th>`).join("");
+
+      const fromRow = units.map((u) => {
+        const cls = u.symbol === task.from.symbol ? "hl" : "";
+        const val = u.symbol === task.from.symbol ? toCommaString(task.inputValue) : "·";
+        return `<td class="${cls}">${val}</td>`;
+      }).join("");
+
+      const toRow = units.map((u) => {
+        const cls = u.symbol === task.to.symbol ? "hl" : "";
+        const val = u.symbol === task.to.symbol ? "?" : "·";
+        return `<td class="${cls}">${val}</td>`;
+      }).join("");
 
       $("hintTable").innerHTML = `
         <thead><tr>${head}</tr></thead>
-        <tbody><tr>${power}</tr></tbody>
+        <tbody>
+          <tr>${fromRow}</tr>
+          <tr>${toRow}</tr>
+        </tbody>
       `;
 
       const direction = task.from.p > task.to.p ? "nach rechts" : "nach links";
       const diff = Math.abs(task.from.p - task.to.p);
-      $("hintInfo").innerHTML = `Von <strong>${escapeHtml(task.from.symbol)}</strong> zu <strong>${escapeHtml(task.to.symbol)}</strong>: Schrittweite ${diff} Zehnerpotenz(en) ${direction}.`;
+      const commaHint = allowDecimals ? "Dezimalpunkt/-komma entsprechend verschieben." : "Nullen ergänzen oder streichen.";
+      $("hintInfo").innerHTML = `Aktuelles Beispiel: <strong>${toCommaString(task.inputValue)} ${escapeHtml(task.from.symbol)}</strong> → <strong>? ${escapeHtml(task.to.symbol)}</strong>. ${diff} Schritt(e) ${direction}. ${commaHint}`;
     }
 
     function renderTask(){
