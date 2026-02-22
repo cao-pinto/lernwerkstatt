@@ -132,7 +132,7 @@
           <div class="taskBox">
             <div class="muted">Aufgabe:</div>
             <div id="task" class="task">—</div>
-            <div class="muted taskHint">Tipp: Dezimal mit Komma oder Punkt eingeben · Enter = OK</div>
+            <div class="muted taskHint" id="taskHint">Tipp: Dezimal mit Komma oder Punkt eingeben · Enter = OK</div>
           </div>
 
           <div class="row">
@@ -232,8 +232,6 @@
         label: "Gewichtsmaße",
         units: [
           { symbol: "mg", p: -6 },
-          { symbol: "cg", p: -5 },
-          { symbol: "dg", p: -4 },
           { symbol: "g", p: -3 },
           { symbol: "dag", p: -2 },
           { symbol: "kg", p: 0 },
@@ -244,12 +242,8 @@
         label: "Hohlmaße",
         units: [
           { symbol: "ml", p: -3 },
-          { symbol: "cl", p: -2 },
-          { symbol: "dl", p: -1 },
           { symbol: "l", p: 0 },
-          { symbol: "dal", p: 1 },
-          { symbol: "hl", p: 2 },
-          { symbol: "kl", p: 3 }
+          { symbol: "hl", p: 2 }
         ]
       }
     };
@@ -315,6 +309,7 @@
       $("noDecBtn").classList.toggle("active", !on);
       $("hsModeLabel").textContent = `Modus: ${modeLabel()}`;
       $("hintModeLabel").textContent = modeLabel();
+      $("taskHint").style.display = on ? "block" : "none";
     }
 
     function toCommaString(n){
