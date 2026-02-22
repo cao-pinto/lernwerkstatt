@@ -472,10 +472,12 @@
         const math = list.filter(x => x.game === "math");
         const bin = list.filter(x => x.game === "binary");
         const tree = list.filter(x => x.game === "tree");
+        const conv = list.filter(x => x.game === "conversion");
 
         const bestMath = math.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
         const bestBin = bin.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
         const bestTree = tree.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
+        const bestConv = conv.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
 
         return {
           name: s.display_name || makeDisplayName(s.first_name, s.last_name),
@@ -483,13 +485,14 @@
           bestMath,
           bestBin,
           bestTree,
+          bestConv,
           attempts: list.length
         };
-      }).sort((a, b) => (b.bestMath + b.bestBin + b.bestTree) - (a.bestMath + a.bestBin + a.bestTree) || a.name.localeCompare(b.name, "de"));
+      }).sort((a, b) => (b.bestMath + b.bestBin + b.bestTree + b.bestConv) - (a.bestMath + a.bestBin + a.bestTree + a.bestConv) || a.name.localeCompare(b.name, "de"));
 
       $("resultsBox").innerHTML = `
         <table>
-          <thead><tr><th>Schüler</th><th>Klasse</th><th>Best Mathe</th><th>Best Binär</th><th>Best Rechenbaum</th><th>Versuche gesamt</th></tr></thead>
+          <thead><tr><th>Schüler</th><th>Klasse</th><th>Best Mathe</th><th>Best Binär</th><th>Best Rechenbaum</th><th>Best Umwandlungen</th><th>Versuche gesamt</th></tr></thead>
           <tbody>
             ${rows.map(r => `
               <tr>
@@ -498,6 +501,7 @@
                 <td>${r.bestMath}</td>
                 <td>${r.bestBin}</td>
                 <td>${r.bestTree}</td>
+                <td>${r.bestConv}</td>
                 <td class="muted">${r.attempts}</td>
               </tr>
             `).join("")}

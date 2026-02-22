@@ -5,6 +5,7 @@
 - `manager_create_teacher`
 - `manager_delete_teacher`
 - `manager_delete_student`
+- `get_highscores_conversions`
 
 ## Voraussetzungen
 - Migration ausführen: `db/lernwerkstatt_school_model.sql`
@@ -22,6 +23,7 @@ supabase functions deploy admin_create_manager
 supabase functions deploy manager_create_teacher
 supabase functions deploy manager_delete_teacher
 supabase functions deploy manager_delete_student
+supabase functions deploy get_highscores_conversions
 ```
 
 ## Lokal testen
