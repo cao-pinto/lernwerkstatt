@@ -36,12 +36,6 @@ Deno.serve(async (req) => {
     const token = getBearerToken(req);
     if (!token) return fail("Authorization Bearer Token fehlt", 401);
 
-    const body = await req.json().catch(() => ({}));
-    const mode = String(body?.mode ?? "").trim();
-
-    if (!mode) return fail("mode fehlt", 400);
-    if (!/^[a-z_]{4,40}$/.test(mode)) return fail("mode ungültig", 400);
-
     const supabase = getAdminClient();
     const caller = await getCaller(supabase, token);
     const schoolId = await getSchoolIdForCaller(supabase, caller.id);
@@ -52,8 +46,7 @@ Deno.serve(async (req) => {
       .from("attempts")
       .select("student_id,correct_count,students!inner(id,school_id,display_name)")
       .eq("students.school_id", schoolId)
-      .eq("game", "conversion")
-      .eq("mode", mode)
+      .eq("game", "binary")
       .order("correct_count", { ascending: false })
       .limit(5000);
 
@@ -77,7 +70,7 @@ Deno.serve(async (req) => {
       .sort((a, b) => b.correct - a.correct || a.name.localeCompare(b.name, "de"))
       .slice(0, 10);
 
-    return ok({ ok: true, mode, top10 });
+    return ok({ ok: true, top10 });
   } catch (e) {
     return fail("Interner Fehler", 500, String(e));
   }

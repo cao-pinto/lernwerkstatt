@@ -185,22 +185,6 @@
     const DURATION = 120;
     const $ = (id) => document.getElementById(id);
 
-    function dedupeBestByName(list, scoreKeyCandidates = ["correct","score","correct_count","trees"]) {
-      const best = new Map(); // name -> {name, score}
-      for (const r of (list || [])) {
-        const name = String(r?.name ?? r?.display_name ?? "—");
-        let score = 0;
-        for (const k of scoreKeyCandidates) {
-          if (r != null && r[k] != null && !Number.isNaN(Number(r[k]))) { score = Number(r[k]); break; }
-        }
-        const prev = best.get(name);
-        if (!prev || score > prev.score) best.set(name, { name, score });
-      }
-      return Array.from(best.values())
-        .sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name))
-        .slice(0,10);
-    }
-
     const loginMsg = $("loginMsg");
     const fb = $("fb");
 
@@ -219,6 +203,14 @@
         compactTimer = null;
       }
       $("loginCard").classList.remove("compactLogin");
+    }
+
+    async function getEdgeHeaders() {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      const headers = { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return headers;
     }
 
 
@@ -414,12 +406,8 @@
 
     function renderHS(targetId, list){
       const el = $(targetId);
-
-      // ✅ Mini-Filter: pro Name nur die beste Leistung
-      const filtered = dedupeBestByName(list, ["correct","score","correct_count"])
-        .map(x => ({ name: x.name, correct: x.score }));
-
-      if (!filtered.length) {
+      const rows = Array.isArray(list) ? list.slice(0, 10) : [];
+      if (!rows.length) {
         el.innerHTML = `<div class="muted">Noch keine Einträge.</div>`;
         return;
       }
@@ -428,7 +416,7 @@
         <table>
           <thead><tr><th>#</th><th>Name</th><th>Richtig</th></tr></thead>
           <tbody>
-            ${filtered.map((r, i) => `
+            ${rows.map((r, i) => `
               <tr>
                 <td class="muted">${i+1}</td>
                 <td><strong>${String(r.name || "—")}</strong></td>
@@ -445,12 +433,10 @@
       $("hsBig").textContent = "Lade…";
 
       try {
+        const headers = await getEdgeHeaders();
         const res = await fetch(FN_GET_HIGHSCORES, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_ANON_KEY
-          },
+          headers,
           body: JSON.stringify({})
         });
 

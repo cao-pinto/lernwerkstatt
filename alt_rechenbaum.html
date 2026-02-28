@@ -257,6 +257,14 @@
       $("loginCard").classList.remove("compactLogin");
     }
 
+    async function getEdgeHeaders() {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      const headers = { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return headers;
+    }
+
     const DURATION = 300;
 
     let studentId = null;
@@ -674,9 +682,10 @@
       $("hsLeft").textContent = "Lade…";
       $("hsRight").textContent = "Lade…";
       try{
+        const headers = await getEdgeHeaders();
         const res = await fetch(FN_GET_HIGHSCORES_TREE, {
           method: "POST",
-          headers: { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY },
+          headers,
           body: JSON.stringify({})
         });
 

@@ -5,6 +5,9 @@
 - `manager_create_teacher`
 - `manager_delete_teacher`
 - `manager_delete_student`
+- `get_highscores`
+- `get_highscores_binary`
+- `get_highscores_tree`
 - `get_highscores_conversions`
 
 ## Voraussetzungen
@@ -23,6 +26,9 @@ supabase functions deploy admin_create_manager
 supabase functions deploy manager_create_teacher
 supabase functions deploy manager_delete_teacher
 supabase functions deploy manager_delete_student
+supabase functions deploy get_highscores
+supabase functions deploy get_highscores_binary
+supabase functions deploy get_highscores_tree
 supabase functions deploy get_highscores_conversions
 ```
 

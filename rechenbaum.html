@@ -257,21 +257,12 @@
       $("loginCard").classList.remove("compactLogin");
     }
 
-
-    function dedupeBestByName(list, scoreKeyCandidates = ["correct","score","correct_count","trees"]) {
-      const best = new Map(); // name -> {name, score}
-      for (const r of (list || [])) {
-        const name = String(r?.name ?? r?.display_name ?? "—");
-        let score = 0;
-        for (const k of scoreKeyCandidates) {
-          if (r != null && r[k] != null && !Number.isNaN(Number(r[k]))) { score = Number(r[k]); break; }
-        }
-        const prev = best.get(name);
-        if (!prev || score > prev.score) best.set(name, { name, score });
-      }
-      return Array.from(best.values())
-        .sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name))
-        .slice(0,10);
+    async function getEdgeHeaders() {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      const headers = { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return headers;
     }
     const DURATION = 300;
 
@@ -690,9 +681,10 @@
       $("hsLeft").textContent = "Lade…";
       $("hsRight").textContent = "Lade…";
       try{
+        const headers = await getEdgeHeaders();
         const res = await fetch(FN_GET_HIGHSCORES_TREE, {
           method: "POST",
-          headers: { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY },
+          headers,
           body: JSON.stringify({})
         });
 
@@ -706,15 +698,10 @@
           return;
         }
 
-        // ✅ Mini-Filter: pro Name nur die beste Leistung (Top 10)
-        const v10 = dedupeBestByName(json.v10, ["trees","correct","score","correct_count"])
-          .map(x => ({ name: x.name, trees: x.score }));
-        const v100 = dedupeBestByName(json.v100, ["trees","correct","score","correct_count"])
-          .map(x => ({ name: x.name, trees: x.score }));
-        const vInt10 = dedupeBestByName(json.vInt10, ["trees","correct","score","correct_count"])
-          .map(x => ({ name: x.name, trees: x.score }));
-        const vInt100 = dedupeBestByName(json.vInt100, ["trees","correct","score","correct_count"])
-          .map(x => ({ name: x.name, trees: x.score }));
+        const v10 = Array.isArray(json.v10) ? json.v10.slice(0, 10) : [];
+        const v100 = Array.isArray(json.v100) ? json.v100.slice(0, 10) : [];
+        const vInt10 = Array.isArray(json.vInt10) ? json.vInt10.slice(0, 10) : [];
+        const vInt100 = Array.isArray(json.vInt100) ? json.vInt100.slice(0, 10) : [];
 
         $("hsLeft").innerHTML =
           renderHSBox("0–10", v10) +

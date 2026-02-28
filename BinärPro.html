@@ -226,6 +226,14 @@
       $("loginCard").classList.remove("compactLogin");
     }
 
+    async function getEdgeHeaders() {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      const headers = { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return headers;
+    }
+
 
     const DURATION = 90;
 
@@ -518,23 +526,10 @@
       return [];
     }
 
-    function dedupeBestByName(list){
-      // keep best "correct" per name, stable-ish
-      const best = new Map(); // name -> {name, correct}
-      for (const r of list){
-        const name = String(r.name ?? r.display_name ?? "—");
-        const correct = Number(r.correct ?? r.score ?? r.correct_count ?? 0);
-        const prev = best.get(name);
-        if (!prev || correct > prev.correct) best.set(name, { name, correct });
-      }
-      return Array.from(best.values()).sort((a,b)=> b.correct - a.correct || a.name.localeCompare(b.name)).slice(0,10);
-    }
-
     function renderHS(list){
       const el = $("hsBox");
-      const filtered = dedupeBestByName(list || []);
-
-      if (!filtered.length){
+      const rows = Array.isArray(list) ? list.slice(0, 10) : [];
+      if (!rows.length){
         el.innerHTML = `<div class="muted">Noch keine Einträge.</div>`;
         return;
       }
@@ -542,7 +537,7 @@
         <table>
           <thead><tr><th>#</th><th>Name</th><th>Richtig</th></tr></thead>
           <tbody>
-            ${filtered.map((r,i)=>`
+            ${rows.map((r,i)=>`
               <tr>
                 <td class="muted">${i+1}</td>
                 <td><strong>${String(r.name)}</strong></td>
@@ -557,9 +552,10 @@
     async function loadHighscores(){
       $("hsBox").textContent = "Lade…";
       try{
+        const headers = await getEdgeHeaders();
         const res = await fetch(FN_GET_HIGHSCORES_BINARY, {
           method: "POST",
-          headers: { "Content-Type":"application/json", "apikey": SUPABASE_ANON_KEY },
+          headers,
           body: JSON.stringify({})
         });
 
