@@ -1,31 +1,11 @@
-import { corsHeaders, fail, getAdminClient, getBearerToken, getCaller, ok } from "../_shared/common.ts";
+import { corsHeaders, fail, getAdminClient, ok } from "../_shared/common.ts";
 
-type AttemptRow = {
-  student_id: string;
-  correct_count: number | null;
-  students: { id: string; display_name: string | null } | { id: string; display_name: string | null }[] | null;
-};
+type AttemptRow = { student_id: string; correct_count: number | null };
+type StudentRow = { id: string; school_id: string | null; display_name: string | null };
 
-async function getSchoolIdForCaller(supabase: ReturnType<typeof getAdminClient>, userId: string): Promise<string | null> {
-  const { data: teacher, error: teacherErr } = await supabase
-    .from("teachers")
-    .select("school_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (teacherErr) throw new Error(`teacher lookup fehlgeschlagen: ${teacherErr.message}`);
-  if (teacher?.school_id) return String(teacher.school_id);
-
-  const { data: student, error: studentErr } = await supabase
-    .from("students")
-    .select("school_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (studentErr) throw new Error(`student lookup fehlgeschlagen: ${studentErr.message}`);
-  if (student?.school_id) return String(student.school_id);
-
-  return null;
+function parseStudentId(body: unknown): string | null {
+  const id = String((body as { student_id?: string } | null)?.student_id ?? "").trim();
+  return /^[0-9a-fA-F-]{36}$/.test(id) ? id : null;
 }
 
 async function top10ByMode(
@@ -33,28 +13,40 @@ async function top10ByMode(
   schoolId: string,
   mode: "small" | "big",
 ): Promise<Array<{ name: string; correct: number }>> {
-  const { data, error } = await supabase
+  const { data: attempts, error: attemptsErr } = await supabase
     .from("attempts")
-    .select("student_id,correct_count,students!inner(id,school_id,display_name)")
-    .eq("students.school_id", schoolId)
+    .select("student_id,correct_count")
     .eq("mode", mode)
     .or("game.is.null,game.eq.math")
     .order("correct_count", { ascending: false })
     .limit(5000);
 
-  if (error) throw new Error(`attempts ${mode} query fehlgeschlagen: ${error.message}`);
+  if (attemptsErr) throw new Error(`attempts ${mode} query fehlgeschlagen: ${attemptsErr.message}`);
 
-  const rows = (data || []) as AttemptRow[];
+  const rows = (attempts || []) as AttemptRow[];
+  const ids = Array.from(new Set(rows.map((r) => r.student_id).filter(Boolean)));
+  if (!ids.length) return [];
+
+  const { data: students, error: studentsErr } = await supabase
+    .from("students")
+    .select("id,school_id,display_name")
+    .in("id", ids);
+
+  if (studentsErr) throw new Error(`students ${mode} query fehlgeschlagen: ${studentsErr.message}`);
+
+  const studentMap = new Map<string, StudentRow>();
+  for (const s of (students || []) as StudentRow[]) {
+    if (s.school_id === schoolId) studentMap.set(s.id, s);
+  }
+
   const bestByStudent = new Map<string, { name: string; correct: number }>();
-
-  for (const row of rows) {
-    const student = Array.isArray(row.students) ? row.students[0] : row.students;
-    if (!student?.id) continue;
-
-    const score = Number(row.correct_count || 0);
-    const prev = bestByStudent.get(student.id);
+  for (const r of rows) {
+    const s = studentMap.get(r.student_id);
+    if (!s) continue;
+    const score = Number(r.correct_count || 0);
+    const prev = bestByStudent.get(r.student_id);
     if (!prev || score > prev.correct) {
-      bestByStudent.set(student.id, { name: student.display_name || "—", correct: score });
+      bestByStudent.set(r.student_id, { name: s.display_name || "—", correct: score });
     }
   }
 
@@ -68,14 +60,20 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return fail("Nur POST erlaubt", 405);
 
   try {
-    const token = getBearerToken(req);
-    if (!token) return fail("Authorization Bearer Token fehlt", 401);
-
     const supabase = getAdminClient();
-    const caller = await getCaller(supabase, token);
-    const schoolId = await getSchoolIdForCaller(supabase, caller.id);
+    const body = await req.json().catch(() => ({}));
+    const studentId = parseStudentId(body);
+    if (!studentId) return fail("student_id fehlt oder ungültig", 400);
 
-    if (!schoolId) return fail("Keine Schule für diesen Benutzer gefunden", 403);
+    const { data: me, error: meErr } = await supabase
+      .from("students")
+      .select("school_id")
+      .eq("id", studentId)
+      .maybeSingle();
+
+    if (meErr) return fail("student query fehlgeschlagen", 400, meErr.message);
+    const schoolId = me?.school_id ? String(me.school_id) : null;
+    if (!schoolId) return fail("Schule zum student_id nicht gefunden", 404);
 
     const [small, big] = await Promise.all([
       top10ByMode(supabase, schoolId, "small"),

@@ -688,7 +688,7 @@
         const res = await fetch(FN_GET_HIGHSCORES_CONVERSIONS, {
           method: "POST",
           headers,
-          body: JSON.stringify({ mode: modeKey() })
+          body: JSON.stringify({ student_id: studentId, mode: modeKey() })
         });
 
         const json = await res.json();

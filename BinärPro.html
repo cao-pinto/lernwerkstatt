@@ -556,7 +556,7 @@
         const res = await fetch(FN_GET_HIGHSCORES_BINARY, {
           method: "POST",
           headers,
-          body: JSON.stringify({})
+          body: JSON.stringify({ student_id: studentId })
         });
 
         const json = await res.json().catch(()=>null);
