@@ -27,6 +27,15 @@
     .pill { padding:6px 10px; border-radius:999px; background:#eef2ff; font-weight:800; }
     .csvLoading { border-color:#1f6feb !important; background:#eaf2ff !important; }
     #importCsvBtn:disabled { opacity:.65; cursor:not-allowed; }
+    .resultsStats { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:12px; }
+    .statCard { background:#f8fbff; border:1px solid #dbe6f5; border-radius:14px; padding:14px; }
+    .statCard strong { display:block; font-size:1.5rem; margin-top:4px; }
+    .resultsSection { margin-top:14px; border:1px solid #dbe6f5; border-radius:14px; background:#fbfdff; overflow:hidden; }
+    .resultsSection summary { cursor:pointer; list-style:none; padding:14px 16px; font-weight:900; display:flex; justify-content:space-between; gap:12px; align-items:center; background:#f1f6ff; }
+    .resultsSection summary::-webkit-details-marker { display:none; }
+    .resultsSectionBody { padding:0 16px 16px; }
+    .summaryMeta { font-weight:600; opacity:.8; font-size:.95rem; }
+    .subtle { font-size:.92rem; opacity:.8; }
   </style>
   <link rel="stylesheet" href="./theme.css" />
 </head>
@@ -83,22 +92,27 @@
       </div>
 
       <div class="card">
-        <h2 style="margin-top:0;">2) Kinder in Gruppen verwalten</h2>
-        <div class="row">
-          <select id="classFilter"></select>
-          <button class="ghost" id="toggleAllBtn">Alle markieren</button>
-          <button id="addToGroupBtn">Markierte zur Gruppe hinzufügen</button>
+        <div class="row" style="justify-content:space-between;">
+          <h2 style="margin:0;">2) Kinder in Gruppen verwalten</h2>
+          <button class="ghost" id="toggleGroupManageBtn" type="button" aria-expanded="false">Bereich aufklappen</button>
         </div>
-        <div id="memberMsg" style="margin-top:10px;"></div>
-
-        <div class="grid2" style="margin-top:10px;">
-          <div>
-            <h3>Schüler der Schule (nach Klasse)</h3>
-            <div id="schoolStudents" class="muted">—</div>
+        <div id="groupManageSection" style="display:none; margin-top:12px;">
+          <div class="row">
+            <select id="classFilter"></select>
+            <button class="ghost" id="toggleAllBtn">Alle markieren</button>
+            <button id="addToGroupBtn">Markierte zur Gruppe hinzufügen</button>
           </div>
-          <div>
-            <h3>Schüler in der gewählten Gruppe</h3>
-            <div id="groupStudents" class="muted">—</div>
+          <div id="memberMsg" style="margin-top:10px;"></div>
+
+          <div class="grid2" style="margin-top:10px;">
+            <div>
+              <h3>Schüler der Schule (nach Klasse)</h3>
+              <div id="schoolStudents" class="muted">—</div>
+            </div>
+            <div>
+              <h3>Schüler in der gewählten Gruppe</h3>
+              <div id="groupStudents" class="muted">—</div>
+            </div>
           </div>
         </div>
       </div>
@@ -109,58 +123,72 @@
         <div id="resultsBox" class="muted" style="margin-top:10px;">—</div>
       </div>
 
+      <div class="card">
+        <h2 style="margin-top:0;">Soziale Rueckmeldungen</h2>
+        <p class="muted" style="margin-top:0;">Eigene Seite fuer anonyme Rueckmeldungsrunden mit Schulwoche, Anwesenheitsliste und Auswertung nach dem Beenden.</p>
+        <div class="row">
+          <a class="ghost" href="./sozialfeedback.html">Rueckmeldungsseite oeffnen</a>
+          <a class="ghost" href="./sozialfeedback-schueler.html">Schueleransicht oeffnen</a>
+        </div>
+      </div>
+
       <div class="card" id="managerCard" style="display:none;">
-        <h2 style="margin-top:0;">4) Digital Learning Manager – Schulverwaltung</h2>
+        <div class="row" style="justify-content:space-between;">
+          <h2 style="margin:0;">4) Digital Learning Manager – Schulverwaltung</h2>
+          <button class="ghost" id="toggleManagerSectionBtn" type="button" aria-expanded="false">Bereich aufklappen</button>
+        </div>
 
-        <div class="grid2">
-          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
-            <h3 style="margin-top:0;">Lehrer anlegen</h3>
-            <div class="row">
-              <input id="tName" placeholder="Anzeigename" />
-              <input id="tEmail" placeholder="Email" />
-              <input id="tPass" type="password" placeholder="Passwort" />
-              <button id="createTeacherBtn">Lehrer erstellen</button>
+        <div id="managerSection" style="display:none; margin-top:12px;">
+          <div class="grid2">
+            <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+              <h3 style="margin-top:0;">Lehrer anlegen</h3>
+              <div class="row">
+                <input id="tName" placeholder="Anzeigename" />
+                <input id="tEmail" placeholder="Email" />
+                <input id="tPass" type="password" placeholder="Passwort" />
+                <button id="createTeacherBtn">Lehrer erstellen</button>
+              </div>
+              <div id="teacherMsg" style="margin-top:10px;"></div>
+              <div id="teachersList" class="muted" style="margin-top:10px;">—</div>
             </div>
-            <div id="teacherMsg" style="margin-top:10px;"></div>
-            <div id="teachersList" class="muted" style="margin-top:10px;">—</div>
-          </div>
 
-          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
-            <h3 style="margin-top:0;">Schüler einzeln anlegen</h3>
-            <div class="row">
-              <input id="sFirst" placeholder="Vorname" />
-              <input id="sLast" placeholder="Nachname" />
-              <input id="sClass" placeholder="Klasse" />
-              <button id="createStudentBtn">Schüler erstellen</button>
+            <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa;">
+              <h3 style="margin-top:0;">Schüler einzeln anlegen</h3>
+              <div class="row">
+                <input id="sFirst" placeholder="Vorname" />
+                <input id="sLast" placeholder="Nachname" />
+                <input id="sClass" placeholder="Klasse" />
+                <button id="createStudentBtn">Schüler erstellen</button>
+              </div>
+              <div class="muted" style="margin-top:8px;">Rufname wird automatisch erzeugt: Vorname + erster Buchstabe Nachname + Punkt.</div>
+              <div id="studentMsg" style="margin-top:10px;"></div>
             </div>
-            <div class="muted" style="margin-top:8px;">Rufname wird automatisch erzeugt: Vorname + erster Buchstabe Nachname + Punkt.</div>
-            <div id="studentMsg" style="margin-top:10px;"></div>
           </div>
-        </div>
 
-        <div id="csvCard" class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
-          <h3 style="margin-top:0;">CSV-Import Schüler</h3>
-          <p class="muted" style="margin-top:0;">Spalten: <code>vorname,nachname,klasse</code> (oder mit <code>;</code> getrennt). Erste Zeile darf Header sein.</p>
-          <div class="row">
-            <input type="file" id="csvFile" accept=".csv,text/csv" />
-            <button id="importCsvBtn">CSV importieren</button>
+          <div id="csvCard" class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
+            <h3 style="margin-top:0;">CSV-Import Schüler</h3>
+            <p class="muted" style="margin-top:0;">Spalten: <code>vorname,nachname,klasse</code> (oder mit <code>;</code> getrennt). Erste Zeile darf Header sein.</p>
+            <div class="row">
+              <input type="file" id="csvFile" accept=".csv,text/csv" />
+              <button id="importCsvBtn">CSV importieren</button>
+            </div>
+            <div id="csvMsg" style="margin-top:10px;"></div>
           </div>
-          <div id="csvMsg" style="margin-top:10px;"></div>
-        </div>
 
-        <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
-          <h3 style="margin-top:0;">Schüler der Schule</h3>
-          <div class="row">
-            <select id="mgrClassFilter"></select>
-            <button class="ghost" id="refreshStudentsBtn">Liste aktualisieren</button>
+          <div class="card" style="box-shadow:none; border:1px solid #e5e7eb; background:#fafafa; margin-top:14px;">
+            <h3 style="margin-top:0;">Schüler der Schule</h3>
+            <div class="row">
+              <select id="mgrClassFilter"></select>
+              <button class="ghost" id="refreshStudentsBtn">Liste aktualisieren</button>
+            </div>
+            <div id="studentsList" class="muted" style="margin-top:10px;">—</div>
           </div>
-          <div id="studentsList" class="muted" style="margin-top:10px;">—</div>
-        </div>
 
-        <p class="muted" style="margin-top:12px;">
-          Hinweis: Für das Löschen von Lehrer-/Schüler-Logins werden Edge Functions erwartet:
-          <code>manager_create_teacher</code>, <code>manager_delete_teacher</code>, <code>manager_delete_student</code>.
-        </p>
+          <p class="muted" style="margin-top:12px;">
+            Hinweis: Für das Löschen von Lehrer-/Schüler-Logins werden Edge Functions erwartet:
+            <code>manager_create_teacher</code>, <code>manager_delete_teacher</code>, <code>manager_delete_student</code>.
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -198,10 +226,70 @@
       return String(s || "").trim().replace(/\s+/g, " ");
     }
 
+    function setGroupManageExpanded(expanded) {
+      $("groupManageSection").style.display = expanded ? "block" : "none";
+      $("toggleGroupManageBtn").textContent = expanded ? "Bereich einklappen" : "Bereich aufklappen";
+      $("toggleGroupManageBtn").setAttribute("aria-expanded", expanded ? "true" : "false");
+    }
+
+    function setManagerSectionExpanded(expanded) {
+      $("managerSection").style.display = expanded ? "block" : "none";
+      $("toggleManagerSectionBtn").textContent = expanded ? "Bereich einklappen" : "Bereich aufklappen";
+      $("toggleManagerSectionBtn").setAttribute("aria-expanded", expanded ? "true" : "false");
+    }
+
     function makeDisplayName(first, last) {
       const f = normalizeText(first);
       const l = normalizeText(last);
       return l ? `${f} ${l[0].toUpperCase()}.` : f;
+    }
+
+    function toNumber(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatPercent(value) {
+      return `${Math.round(toNumber(value))}%`;
+    }
+
+    function gameLabel(game, mode) {
+      const g = String(game || "");
+      const m = String(mode || "");
+      if (g === "math") {
+        if (m === "small") return "1x1 Trainer - kleines Einmaleins";
+        if (m === "big") return "1x1 Trainer - grosses Einmaleins";
+        return "1x1 Trainer";
+      }
+      if (g === "tree") return m ? `Rechenbaum - ${m}` : "Rechenbaum";
+      if (g === "binary") return m ? `Binaer - ${m}` : "Binaer";
+      if (g === "conversion") {
+        const map = {
+          length: "Umwandlungen - Laengen",
+          area: "Umwandlungen - Flaechen",
+          volume: "Umwandlungen - Volumen",
+          weight: "Umwandlungen - Gewicht",
+          capacity: "Umwandlungen - Hohlmasse"
+        };
+        return map[m] || (m ? `Umwandlungen - ${m}` : "Umwandlungen");
+      }
+      return [g, m].filter(Boolean).join(" - ") || "Unbekannt";
+    }
+
+    function gameSortKey(game, mode) {
+      const map = {
+        "math:small": 10,
+        "math:big": 11,
+        "tree:": 20,
+        "binary:": 30,
+        "conversion:length": 40,
+        "conversion:area": 41,
+        "conversion:volume": 42,
+        "conversion:weight": 43,
+        "conversion:capacity": 44
+      };
+      const key = `${String(game || "")}:${String(mode || "")}`;
+      return map[key] ?? 999;
     }
 
     function randCode(len=5){
@@ -464,49 +552,166 @@
         return;
       }
 
-      const byStudent = new Map(groupMembers.map(s => [s.id, { student: s, rows: [] }]));
-      for (const a of (attempts || [])) byStudent.get(a.student_id)?.rows.push(a);
+      const allAttempts = attempts || [];
+      const studentMap = new Map(groupMembers.map(s => [s.id, s]));
+      const byVariant = new Map();
+      const byStudent = new Map(groupMembers.map(s => [s.id, []]));
 
-      const rows = groupMembers.map(s => {
-        const list = byStudent.get(s.id)?.rows || [];
-        const math = list.filter(x => x.game === "math");
-        const bin = list.filter(x => x.game === "binary");
-        const tree = list.filter(x => x.game === "tree");
-        const conv = list.filter(x => x.game === "conversion");
+      for (const attempt of allAttempts) {
+        const game = String(attempt.game || "");
+        const mode = String(attempt.mode || "");
+        const key = `${game}__${mode}`;
+        if (!byVariant.has(key)) byVariant.set(key, []);
+        byVariant.get(key).push(attempt);
+        if (!byStudent.has(attempt.student_id)) byStudent.set(attempt.student_id, []);
+        byStudent.get(attempt.student_id).push(attempt);
+      }
 
-        const bestMath = math.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
-        const bestBin = bin.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
-        const bestTree = tree.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
-        const bestConv = conv.reduce((m, x) => Math.max(m, Number(x.correct_count || 0)), 0);
-
+      const studentOverviewRows = groupMembers.map((student) => {
+        const rows = byStudent.get(student.id) || [];
+        const totalCorrect = rows.reduce((sum, row) => sum + toNumber(row.correct_count), 0);
+        const totalAnswers = rows.reduce((sum, row) => sum + toNumber(row.total_count), 0);
+        const bestCorrect = rows.reduce((best, row) => Math.max(best, toNumber(row.correct_count)), 0);
         return {
-          name: s.display_name || makeDisplayName(s.first_name, s.last_name),
-          class_name: s.class_name || "",
-          bestMath,
-          bestBin,
-          bestTree,
-          bestConv,
-          attempts: list.length
+          name: student.display_name || makeDisplayName(student.first_name, student.last_name),
+          class_name: student.class_name || "",
+          attempts: rows.length,
+          bestCorrect,
+          totalCorrect,
+          totalAnswers,
+          avgAccuracy: totalAnswers ? Math.round((totalCorrect / totalAnswers) * 100) : 0
         };
-      }).sort((a, b) => (b.bestMath + b.bestBin + b.bestTree + b.bestConv) - (a.bestMath + a.bestBin + a.bestTree + a.bestConv) || a.name.localeCompare(b.name, "de"));
+      }).sort((a, b) => b.attempts - a.attempts || b.bestCorrect - a.bestCorrect || a.name.localeCompare(b.name, "de"));
+
+      const variantSections = Array.from(byVariant.entries())
+        .map(([key, rows]) => {
+          const sample = rows[0] || {};
+          const game = String(sample.game || "");
+          const mode = String(sample.mode || "");
+          const label = gameLabel(game, mode);
+
+          const detailRows = groupMembers.map((student) => {
+            const ownRows = rows.filter((row) => row.student_id === student.id);
+            const attemptsCount = ownRows.length;
+            const totalCorrect = ownRows.reduce((sum, row) => sum + toNumber(row.correct_count), 0);
+            const totalWrong = ownRows.reduce((sum, row) => sum + toNumber(row.wrong_count), 0);
+            const totalAnswers = ownRows.reduce((sum, row) => sum + toNumber(row.total_count), 0);
+            const bestCorrect = ownRows.reduce((best, row) => Math.max(best, toNumber(row.correct_count)), 0);
+            const bestAccuracy = ownRows.reduce((best, row) => Math.max(best, toNumber(row.accuracy)), 0);
+            const latest = ownRows[0]?.created_at || null;
+            return {
+              name: student.display_name || makeDisplayName(student.first_name, student.last_name),
+              class_name: student.class_name || "",
+              attemptsCount,
+              totalCorrect,
+              totalWrong,
+              totalAnswers,
+              bestCorrect,
+              bestAccuracy,
+              avgAccuracy: totalAnswers ? Math.round((totalCorrect / totalAnswers) * 100) : 0,
+              latest
+            };
+          }).filter((row) => row.attemptsCount > 0)
+            .sort((a, b) => b.attemptsCount - a.attemptsCount || b.bestCorrect - a.bestCorrect || a.name.localeCompare(b.name, "de"));
+
+          const totalAttempts = rows.length;
+          const activeStudents = detailRows.length;
+          const totalCorrect = rows.reduce((sum, row) => sum + toNumber(row.correct_count), 0);
+          const totalAnswers = rows.reduce((sum, row) => sum + toNumber(row.total_count), 0);
+          const bestCorrect = rows.reduce((best, row) => Math.max(best, toNumber(row.correct_count)), 0);
+          const avgAccuracy = totalAnswers ? Math.round((totalCorrect / totalAnswers) * 100) : 0;
+
+          return {
+            key,
+            label,
+            sortKey: gameSortKey(game, mode),
+            totalAttempts,
+            activeStudents,
+            totalCorrect,
+            totalAnswers,
+            bestCorrect,
+            avgAccuracy,
+            detailRows
+          };
+        })
+        .sort((a, b) => a.sortKey - b.sortKey || a.label.localeCompare(b.label, "de"));
+
+      const totalAnswersAll = allAttempts.reduce((sum, row) => sum + toNumber(row.total_count), 0);
+      const totalCorrectAll = allAttempts.reduce((sum, row) => sum + toNumber(row.correct_count), 0);
+      const activeStudentsCount = studentOverviewRows.filter((row) => row.attempts > 0).length;
 
       $("resultsBox").innerHTML = `
-        <table>
-          <thead><tr><th>Schüler</th><th>Klasse</th><th>Best Mathe</th><th>Best Binär</th><th>Best Rechenbaum</th><th>Best Umwandlungen</th><th>Versuche gesamt</th></tr></thead>
-          <tbody>
-            ${rows.map(r => `
-              <tr>
-                <td><strong>${escapeHtml(r.name)}</strong></td>
-                <td>${escapeHtml(r.class_name)}</td>
-                <td>${r.bestMath}</td>
-                <td>${r.bestBin}</td>
-                <td>${r.bestTree}</td>
-                <td>${r.bestConv}</td>
-                <td class="muted">${r.attempts}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
+        <div class="resultsStats">
+          <div class="statCard"><div class="subtle">Schüler in Gruppe</div><strong>${groupMembers.length}</strong></div>
+          <div class="statCard"><div class="subtle">Aktiv geübt</div><strong>${activeStudentsCount}</strong></div>
+          <div class="statCard"><div class="subtle">Versuche gesamt</div><strong>${allAttempts.length}</strong></div>
+          <div class="statCard"><div class="subtle">Richtige Antworten</div><strong>${totalCorrectAll}</strong></div>
+          <div class="statCard"><div class="subtle">Antworten gesamt</div><strong>${totalAnswersAll}</strong></div>
+          <div class="statCard"><div class="subtle">Trefferquote gesamt</div><strong>${totalAnswersAll ? formatPercent((totalCorrectAll / totalAnswersAll) * 100) : "0%"}</strong></div>
+        </div>
+
+        <details class="resultsSection">
+          <summary>
+            <span>Gruppenuebersicht nach Schueler</span>
+            <span class="summaryMeta">${studentOverviewRows.filter(x => x.attempts > 0).length} mit Aktivitaet</span>
+          </summary>
+          <div class="resultsSectionBody">
+            <table>
+              <thead><tr><th>Schüler</th><th>Klasse</th><th>Versuche</th><th>Bestes Ergebnis</th><th>Richtige Antworten</th><th>Antworten gesamt</th><th>Trefferquote</th></tr></thead>
+              <tbody>
+                ${studentOverviewRows.map((row) => `
+                  <tr>
+                    <td><strong>${escapeHtml(row.name)}</strong></td>
+                    <td>${escapeHtml(row.class_name)}</td>
+                    <td>${row.attempts}</td>
+                    <td>${row.bestCorrect}</td>
+                    <td>${row.totalCorrect}</td>
+                    <td>${row.totalAnswers}</td>
+                    <td>${formatPercent(row.avgAccuracy)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        ${variantSections.length ? variantSections.map((section) => `
+          <details class="resultsSection">
+            <summary>
+              <span>${escapeHtml(section.label)}</span>
+              <span class="summaryMeta">${section.totalAttempts} Versuche • ${section.activeStudents} Schüler • Beste Serie ${section.bestCorrect}</span>
+            </summary>
+            <div class="resultsSectionBody">
+              <div class="resultsStats">
+                <div class="statCard"><div class="subtle">Versuche</div><strong>${section.totalAttempts}</strong></div>
+                <div class="statCard"><div class="subtle">Aktive Schüler</div><strong>${section.activeStudents}</strong></div>
+                <div class="statCard"><div class="subtle">Richtige Antworten</div><strong>${section.totalCorrect}</strong></div>
+                <div class="statCard"><div class="subtle">Antworten gesamt</div><strong>${section.totalAnswers}</strong></div>
+                <div class="statCard"><div class="subtle">Trefferquote</div><strong>${formatPercent(section.avgAccuracy)}</strong></div>
+                <div class="statCard"><div class="subtle">Bestes Ergebnis</div><strong>${section.bestCorrect}</strong></div>
+              </div>
+              <table>
+                <thead><tr><th>Schüler</th><th>Klasse</th><th>Versuche</th><th>Bestes Ergebnis</th><th>Beste Quote</th><th>Richtig</th><th>Falsch</th><th>Antworten</th><th>Trefferquote</th><th>Zuletzt geübt</th></tr></thead>
+                <tbody>
+                  ${section.detailRows.map((row) => `
+                    <tr>
+                      <td><strong>${escapeHtml(row.name)}</strong></td>
+                      <td>${escapeHtml(row.class_name)}</td>
+                      <td>${row.attemptsCount}</td>
+                      <td>${row.bestCorrect}</td>
+                      <td>${formatPercent(row.bestAccuracy)}</td>
+                      <td>${row.totalCorrect}</td>
+                      <td>${row.totalWrong}</td>
+                      <td>${row.totalAnswers}</td>
+                      <td>${formatPercent(row.avgAccuracy)}</td>
+                      <td>${row.latest ? new Date(row.latest).toLocaleString("de-AT") : "—"}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        `).join("") : `<div class="muted" style="margin-top:12px;">Bisher wurden in dieser Gruppe noch keine Übungen absolviert.</div>`}
       `;
     }
 
@@ -696,6 +901,14 @@
     });
 
     $("refreshBtn").addEventListener("click", refreshAll);
+    $("toggleGroupManageBtn").addEventListener("click", () => {
+      const expanded = $("groupManageSection").style.display !== "none";
+      setGroupManageExpanded(!expanded);
+    });
+    $("toggleManagerSectionBtn").addEventListener("click", () => {
+      const expanded = $("managerSection").style.display !== "none";
+      setManagerSectionExpanded(!expanded);
+    });
 
     $("createGroupBtn").addEventListener("click", async () => {
       const name = normalizeText($("groupName").value);
@@ -846,6 +1059,8 @@
       await refreshGroupArea();
     });
 
+    setGroupManageExpanded(false);
+    setManagerSectionExpanded(false);
     await ensureUI();
   </script>
 </body>

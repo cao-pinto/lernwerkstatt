@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Soziale Rueckmeldungen - Lehrerbereich</title>
+  <style>
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 1200px; margin:0 auto; padding:24px; }
+    .card { background:#fff; border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.08); margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .grid2 { display:grid; grid-template-columns: 1.1fr .9fr; gap:14px; }
+    .grid3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+    @media (max-width: 980px){ .grid2, .grid3 { grid-template-columns: 1fr; } }
+    input, select, textarea { padding:10px 12px; border-radius:10px; border:1px solid #ccd2e1; font-size:1rem; }
+    button { padding:10px 14px; border-radius:10px; border:0; background:#1f6feb; color:#fff; font-weight:900; cursor:pointer; }
+    button.ghost { background:#e5e7eb; color:#111; }
+    button.danger { background:#fee2e2; color:#111; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .muted { opacity:.8; }
+    .ok { background:#ecfdf5; border:1px solid #10b98144; padding:10px; border-radius:10px; }
+    .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:10px; }
+    .pill { padding:6px 10px; border-radius:999px; background:#eef2ff; font-weight:800; }
+    .stat { padding:14px; border-radius:16px; background:rgba(255,255,255,.78); border:1px solid #d8e3f6; }
+    .stat strong { display:block; font-size:1.8rem; margin-top:6px; }
+    table { width:100%; border-collapse: collapse; margin-top:10px; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid #e5e7eb; vertical-align:top; }
+    th { font-size:.9rem; opacity:.9; }
+    .checklist { display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:10px; margin-top:10px; }
+    .checkItem { display:flex; gap:10px; align-items:flex-start; padding:12px; border:1px solid #d6dfef; border-radius:14px; background:rgba(255,255,255,.72); }
+    .summaryItem { padding:14px; border-radius:16px; border:1px solid #d8e3f6; background:rgba(255,255,255,.76); margin-top:10px; }
+    .summaryItem h4 { margin:0 0 6px; }
+    .reasonList { margin:10px 0 0; padding-left:18px; }
+    .hint { font-size:.95rem; }
+    a.ghost { text-decoration:none; padding:10px 14px; border-radius:10px; background:#e5e7eb; color:#111; font-weight:900; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <h1 style="margin:0;">Soziale Rueckmeldungen</h1>
+          <p class="muted" style="margin:10px 0 0;">Schueler geben pro Schulwoche genau eine anonyme Rueckmeldung an die Lehrkraft ab oder waehlen "keine Rueckmeldung".</p>
+        </div>
+        <div class="row">
+          <a class="ghost" href="./sozialfeedback-schueler.html">Schueleransicht</a>
+          <a class="ghost" href="./lehrer.html">← Lehrerbereich</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2 style="margin-top:0;">Login</h2>
+      <div class="row">
+        <input id="email" placeholder="Email" />
+        <input id="pass" type="password" placeholder="Passwort" />
+        <button id="loginBtn">Einloggen</button>
+      </div>
+      <div id="loginMsg" style="margin-top:10px;"></div>
+    </div>
+
+    <div id="app" style="display:none;">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <div class="muted">Eingeloggt als</div>
+            <div style="font-size:1.2rem; font-weight:900;" id="who">—</div>
+            <div class="row" style="margin-top:8px;">
+              <span class="pill" id="rolePill">Rolle: —</span>
+              <span class="pill" id="schoolPill">Schule: —</span>
+            </div>
+          </div>
+          <div class="row">
+            <button class="ghost" id="refreshBtn">Aktualisieren</button>
+            <button class="ghost" id="logoutBtn">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0;">1) Runde vorbereiten</h2>
+        <div class="row">
+          <select id="groupSelect"></select>
+          <select id="weekSelect"></select>
+          <button class="ghost" id="selectAllBtn">Alle anwesend</button>
+          <button class="ghost" id="selectNoneBtn">Alle abwaehlen</button>
+          <button id="startRoundBtn">Runde starten</button>
+          <button class="danger" id="resetWeekBtn">Woche zuruecksetzen</button>
+        </div>
+        <div id="setupMsg" style="margin-top:10px;"></div>
+        <p class="muted hint" style="margin:10px 0 0;">Nur als anwesend markierte Schueler muessen abstimmen. Die eigentlichen Rueckmeldungen bleiben temporaer und werden nicht dauerhaft archiviert.</p>
+        <div id="attendanceBox" class="muted" style="margin-top:12px;">Bitte Gruppe waehlen.</div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <h2 style="margin:0;">2) Laufende Runde</h2>
+            <div class="muted" id="roundMeta">Noch keine Runde fuer diese Auswahl.</div>
+          </div>
+          <div class="row">
+            <button class="ghost" id="reloadRoundBtn">Status laden</button>
+            <button class="danger" id="closeRoundBtn" disabled>Runde beenden</button>
+          </div>
+        </div>
+        <div id="progressBox" class="muted" style="margin-top:12px;">—</div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0;">3) Auswertung</h2>
+        <div class="muted">Die Begruendungen werden erst nach dem Beenden der Runde angezeigt.</div>
+        <div id="summaryBox" class="muted" style="margin-top:12px;">Noch keine abgeschlossene Runde fuer diese Auswahl.</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://dnlencbwbbriijmzijci.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_G8SaY8-oyn7TcP-uH6neuA_PNqUR1x0";
+    const FN_START_ROUND = "https://dnlencbwbbriijmzijci.functions.supabase.co/feedback_start_round";
+    const FN_ROUND_STATUS = "https://dnlencbwbbriijmzijci.functions.supabase.co/feedback_teacher_round_status";
+    const FN_CLOSE_ROUND = "https://dnlencbwbbriijmzijci.functions.supabase.co/feedback_close_round";
+    const FN_RESET_ROUND = "https://dnlencbwbbriijmzijci.functions.supabase.co/feedback_reset_round";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = (id) => document.getElementById(id);
+
+    let me = null;
+    let mySchool = null;
+    let myGroups = [];
+    let groupMembers = [];
+    let currentRound = null;
+
+    function msg(el, ok, text) {
+      el.innerHTML = `<div class="${ok ? "ok" : "bad"}">${text}</div>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    function normalizeText(s) {
+      return String(s || "").trim().replace(/\s+/g, " ");
+    }
+
+    async function getTokenOrNull() {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token || null;
+    }
+
+    async function apiJson(url, body) {
+      const token = await getTokenOrNull();
+      if (!token) throw new Error("Kein Login-Token vorhanden.");
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify(body || {}),
+      });
+      const text = await res.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch {}
+      if (!res.ok) throw new Error((json && (json.error || json.message || json.details)) || text || `HTTP ${res.status}`);
+      return json || {};
+    }
+
+    function isoWeek(date = new Date()) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function renderWeekOptions() {
+      const selectedWeek = Number($("weekSelect").value || localStorage.getItem("lw_feedback_week") || 0);
+      const currentWeek = Math.min(40, Math.max(1, isoWeek()));
+      $("weekSelect").innerHTML = Array.from({ length: 40 }, (_, index) => {
+        const week = index + 1;
+        const isSelected = selectedWeek ? week === selectedWeek : week === currentWeek;
+        return `<option value="${week}" ${isSelected ? "selected" : ""}>Schulwoche ${week}</option>`;
+      }).join("");
+    }
+
+    async function loadProfile() {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      const { data: teacher, error } = await supabase
+        .from("teachers")
+        .select("id,display_name,school_id,role")
+        .eq("user_id", userId)
+        .single();
+
+      if (error || !teacher) throw new Error("Kein Lehrerprofil gefunden.");
+      me = teacher;
+
+      const { data: school } = await supabase
+        .from("schools")
+        .select("id,name")
+        .eq("id", me.school_id)
+        .maybeSingle();
+
+      mySchool = school || null;
+      $("who").textContent = me.display_name || "—";
+      $("rolePill").textContent = `Rolle: ${me.role === "manager" ? "Digital Learning Manager" : "Lehrkraft"}`;
+      $("schoolPill").textContent = `Schule: ${school?.name || "—"}`;
+    }
+
+    async function loadGroups() {
+      const { data, error } = await supabase
+        .from("teacher_groups")
+        .select("id,name,created_at")
+        .eq("teacher_id", me.id)
+        .order("name", { ascending: true });
+
+      if (error) throw new Error(error.message);
+      myGroups = data || [];
+      $("groupSelect").innerHTML = myGroups.length
+        ? myGroups.map((g) => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join("")
+        : `<option value="">(keine Gruppen)</option>`;
+    }
+
+    async function loadGroupMembers() {
+      const groupId = $("groupSelect").value;
+      if (!groupId) {
+        groupMembers = [];
+        $("attendanceBox").innerHTML = `<div class="muted">Bitte Gruppe waehlen.</div>`;
+        return;
+      }
+
+      const { data: links, error: linkErr } = await supabase
+        .from("teacher_group_students")
+        .select("student_id")
+        .eq("group_id", groupId);
+
+      if (linkErr) {
+        $("attendanceBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(linkErr.message)}</div>`;
+        return;
+      }
+
+      const ids = (links || []).map((x) => x.student_id);
+      if (!ids.length) {
+        groupMembers = [];
+        $("attendanceBox").innerHTML = `<div class="muted">Diese Gruppe hat noch keine Schueler.</div>`;
+        return;
+      }
+
+      const { data: students, error: studentErr } = await supabase
+        .from("students")
+        .select("id,display_name,class_name")
+        .in("id", ids)
+        .order("display_name", { ascending: true });
+
+      if (studentErr) {
+        $("attendanceBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(studentErr.message)}</div>`;
+        return;
+      }
+
+      groupMembers = students || [];
+      renderAttendance();
+    }
+
+    function renderAttendance(lockedParticipants = null) {
+      if (!groupMembers.length) {
+        $("attendanceBox").innerHTML = `<div class="muted">Keine Schueler in dieser Gruppe.</div>`;
+        return;
+      }
+
+      const lockMap = new Map((lockedParticipants || []).map((x) => [x.student_id, x]));
+      const locked = !!lockedParticipants;
+
+      $("attendanceBox").innerHTML = `
+        <div class="checklist">
+          ${groupMembers.map((student) => {
+            const state = lockMap.get(student.id);
+            const checked = state ? !!state.is_present : true;
+            return `
+              <label class="checkItem">
+                <input type="checkbox" data-student="${student.id}" ${checked ? "checked" : ""} ${locked ? "disabled" : ""} />
+                <div>
+                  <strong>${escapeHtml(student.display_name || "—")}</strong>
+                  <div class="muted">${escapeHtml(student.class_name || "")}</div>
+                </div>
+              </label>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function selectedPresentIds() {
+      return Array.from(document.querySelectorAll("[data-student]:checked"))
+        .map((el) => el.getAttribute("data-student"))
+        .filter(Boolean);
+    }
+
+    function renderProgress(payload) {
+      if (!payload?.round) {
+        $("roundMeta").textContent = "Noch keine Runde fuer diese Auswahl.";
+        $("progressBox").innerHTML = `<div class="muted">Starte zuerst eine Rueckmeldungsrunde.</div>`;
+        $("summaryBox").innerHTML = `<div class="muted">Noch keine abgeschlossene Runde fuer diese Auswahl.</div>`;
+        $("closeRoundBtn").disabled = true;
+        currentRound = null;
+        renderAttendance();
+        return;
+      }
+
+      currentRound = payload.round;
+      $("roundMeta").textContent = `${payload.round.group_name} • Schulwoche ${payload.round.school_week} • Status: ${payload.round.status === "active" ? "laeuft" : "beendet"}`;
+      $("closeRoundBtn").disabled = payload.round.status !== "active";
+      renderAttendance(payload.participants || []);
+
+      const progress = payload.progress || {};
+      $("progressBox").innerHTML = `
+        <div class="grid3">
+          <div class="stat"><div class="muted">Anwesend</div><strong>${progress.present_count ?? 0}</strong></div>
+          <div class="stat"><div class="muted">Abgegeben</div><strong>${progress.voted_count ?? 0}</strong></div>
+          <div class="stat"><div class="muted">Noch offen</div><strong>${progress.open_count ?? 0}</strong></div>
+        </div>
+        <table>
+          <thead><tr><th>Schueler</th><th>Klasse</th><th>Anwesend</th><th>Status</th><th>Zeit</th></tr></thead>
+          <tbody>
+            ${(payload.participants || []).map((row) => `
+              <tr>
+                <td>${escapeHtml(row.display_name || "—")}</td>
+                <td>${escapeHtml(row.class_name || "")}</td>
+                <td>${row.is_present ? "Ja" : "Nein"}</td>
+                <td>${row.is_present ? (row.has_voted ? "Abgegeben" : "Offen") : "Nicht eingeplant"}</td>
+                <td>${row.voted_at ? new Date(row.voted_at).toLocaleString("de-AT") : "—"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      if (payload.round.status === "closed") {
+        renderSummary(payload.summary || null);
+      } else {
+        $("summaryBox").innerHTML = `<div class="muted">Die Begruendungen werden nach dem Beenden der Runde sichtbar.</div>`;
+      }
+    }
+
+    function renderSummary(summary) {
+      if (!summary) {
+        $("summaryBox").innerHTML = `<div class="muted">Noch keine Auswertung vorhanden.</div>`;
+        return;
+      }
+
+      const rows = Array.isArray(summary.results) ? summary.results : [];
+      if (!rows.length) {
+        $("summaryBox").innerHTML = `
+          <div class="ok">
+            Es wurden keine Rueckmeldungen zu Mitschuelern abgegeben.
+            <div class="muted" style="margin-top:6px;">Rueckmeldungen mit "keine Rueckmeldung": ${summary.no_feedback_count || 0}</div>
+          </div>
+        `;
+        return;
+      }
+
+      $("summaryBox").innerHTML = `
+        <div class="ok">Rueckmeldungen ohne Nennung eines Mitschuelers: ${summary.no_feedback_count || 0}</div>
+        ${rows.map((row) => `
+          <div class="summaryItem">
+            <h4>${escapeHtml(row.display_name || "—")}</h4>
+            <div class="muted">${escapeHtml(row.class_name || "")}</div>
+            <div style="margin-top:8px;"><strong>${row.count}</strong> Rueckmeldung(en)</div>
+            <ul class="reasonList">
+              ${(row.reasons || []).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}
+            </ul>
+          </div>
+        `).join("")}
+      `;
+    }
+
+    async function loadRoundStatus() {
+      const groupId = $("groupSelect").value;
+      const schoolWeek = Number($("weekSelect").value);
+
+      if (!groupId || !schoolWeek) {
+        renderProgress(null);
+        return;
+      }
+
+      try {
+        const payload = await apiJson(FN_ROUND_STATUS, { group_id: groupId, school_week: schoolWeek, teacher_id: me?.id || null });
+        renderProgress(payload);
+      } catch (e) {
+        $("progressBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(String(e.message || e))}</div>`;
+      }
+    }
+
+    async function ensureUI() {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        $("loginCard").style.display = "block";
+        $("app").style.display = "none";
+        return;
+      }
+
+      $("loginCard").style.display = "none";
+      $("app").style.display = "block";
+      await loadProfile();
+      renderWeekOptions();
+      await loadGroups();
+      await loadGroupMembers();
+      await loadRoundStatus();
+    }
+
+    $("loginBtn").addEventListener("click", async () => {
+      $("loginMsg").innerHTML = "";
+      const email = normalizeText($("email").value);
+      const password = $("pass").value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) msg($("loginMsg"), false, `Login fehlgeschlagen: ${escapeHtml(error.message)}`);
+      else await ensureUI();
+    });
+
+    $("logoutBtn").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      currentRound = null;
+      await ensureUI();
+    });
+
+    $("refreshBtn").addEventListener("click", ensureUI);
+    $("reloadRoundBtn").addEventListener("click", loadRoundStatus);
+
+    $("groupSelect").addEventListener("change", async () => {
+      await loadGroupMembers();
+      await loadRoundStatus();
+    });
+
+    $("weekSelect").addEventListener("change", () => {
+      localStorage.setItem("lw_feedback_week", $("weekSelect").value);
+      loadRoundStatus();
+    });
+
+    $("selectAllBtn").addEventListener("click", () => {
+      document.querySelectorAll("[data-student]").forEach((el) => { el.checked = true; });
+    });
+
+    $("selectNoneBtn").addEventListener("click", () => {
+      document.querySelectorAll("[data-student]").forEach((el) => { el.checked = false; });
+    });
+
+    $("startRoundBtn").addEventListener("click", async () => {
+      $("setupMsg").innerHTML = "";
+      const groupId = $("groupSelect").value;
+      const schoolWeek = Number($("weekSelect").value);
+      const presentIds = selectedPresentIds();
+
+      if (!groupId) return msg($("setupMsg"), false, "Bitte zuerst eine Gruppe waehlen.");
+      if (!presentIds.length) return msg($("setupMsg"), false, "Bitte mindestens einen anwesenden Schueler markieren.");
+
+      try {
+        await apiJson(FN_START_ROUND, {
+          group_id: groupId,
+          school_week: schoolWeek,
+          present_student_ids: presentIds,
+          teacher_id: me?.id || null,
+        });
+        msg($("setupMsg"), true, "Rueckmeldungsrunde gestartet.");
+        await loadRoundStatus();
+      } catch (e) {
+        msg($("setupMsg"), false, `Fehler: ${escapeHtml(String(e.message || e))}`);
+      }
+    });
+
+    $("closeRoundBtn").addEventListener("click", async () => {
+      if (!currentRound?.id) return;
+      if (!confirm("Runde wirklich beenden? Danach werden die Begruendungen angezeigt.")) return;
+
+      try {
+        const payload = await apiJson(FN_CLOSE_ROUND, { round_id: currentRound.id, teacher_id: me?.id || null });
+        renderProgress(payload);
+      } catch (e) {
+        $("summaryBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(String(e.message || e))}</div>`;
+      }
+    });
+
+    $("resetWeekBtn").addEventListener("click", async () => {
+      $("setupMsg").innerHTML = "";
+      const groupId = $("groupSelect").value;
+      const schoolWeek = Number($("weekSelect").value);
+      if (!groupId) return msg($("setupMsg"), false, "Bitte zuerst eine Gruppe waehlen.");
+      if (!schoolWeek) return msg($("setupMsg"), false, "Bitte eine Schulwoche waehlen.");
+      if (!confirm(`Schulwoche ${schoolWeek} fuer diese Gruppe wirklich zuruecksetzen? Alle Rueckmeldungen dieser Woche werden entfernt.`)) return;
+
+      try {
+        const result = await apiJson(FN_RESET_ROUND, {
+          group_id: groupId,
+          school_week: schoolWeek,
+          teacher_id: me?.id || null,
+        });
+        msg($("setupMsg"), true, result.deleted_round_count
+          ? `Schulwoche ${schoolWeek} wurde zurueckgesetzt.`
+          : `Fuer Schulwoche ${schoolWeek} gab es nichts zum Zuruecksetzen.`);
+        currentRound = null;
+        await loadRoundStatus();
+      } catch (e) {
+        msg($("setupMsg"), false, `Fehler: ${escapeHtml(String(e.message || e))}`);
+      }
+    });
+
+    supabase.auth.onAuthStateChange(() => { ensureUI(); });
+    ensureUI();
+  </script>
+</body>
+</html>

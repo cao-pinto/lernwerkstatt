@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Soziale Rueckmeldung - Schueler</title>
+  <style>
+    body { margin:0; background:#f6f7fb; color:#111; }
+    .wrap { max-width: 860px; margin:0 auto; padding:24px; }
+    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.08); margin-top:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    input, select, textarea { padding:10px 12px; border-radius:10px; border:1px solid #ccd2e1; font-size:1rem; }
+    textarea { width:100%; min-height:140px; resize:vertical; }
+    button { padding:10px 14px; border-radius:10px; border:0; background:#1f6feb; color:#fff; font-weight:900; cursor:pointer; }
+    button.ghost { background:#e5e7eb; color:#111; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .muted { opacity:.8; }
+    .ok { background:#ecfdf5; border:1px solid #10b98144; padding:10px; border-radius:10px; }
+    .bad { background:#fef2f2; border:1px solid #ef444444; padding:10px; border-radius:10px; }
+    .pill { padding:6px 10px; border-radius:999px; background:#eef2ff; font-weight:800; }
+    .helper { margin-top:10px; font-size:.96rem; }
+    a.ghost { text-decoration:none; padding:10px 14px; border-radius:10px; background:#e5e7eb; color:#111; font-weight:900; }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <h1 style="margin:0;">Soziale Rueckmeldung</h1>
+          <p class="muted" style="margin:10px 0 0;">Du kannst pro Runde genau einmal eine Rueckmeldung an deine Lehrkraft abgeben oder "keine Rueckmeldung" waehlen.</p>
+        </div>
+        <a class="ghost" href="./index.html">← Startseite</a>
+      </div>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2 style="margin-top:0;">Login mit Schuelercode</h2>
+      <div class="row">
+        <input id="code" placeholder="Code (z. B. AB7K2)" style="text-transform:uppercase;" />
+        <button id="loginBtn">Anmelden</button>
+      </div>
+      <div id="loginMsg" style="margin-top:10px;"></div>
+    </div>
+
+    <div id="app" style="display:none;">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <div class="muted">Angemeldet als</div>
+            <div style="font-size:1.2rem; font-weight:900;" id="studentName">—</div>
+            <div class="row" style="margin-top:8px;">
+              <span class="pill" id="classPill">Klasse: —</span>
+              <span class="pill" id="roundPill">Runde: —</span>
+            </div>
+          </div>
+          <div class="row">
+            <button class="ghost" id="refreshBtn">Aktualisieren</button>
+            <button class="ghost" id="logoutBtn">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0;">Rueckmeldung abgeben</h2>
+        <div id="statusBox" class="muted">Lade aktive Runde…</div>
+        <div id="formBox" style="display:none; margin-top:14px;">
+          <label for="targetSelect"><strong>Mitschueler auswaehlen</strong></label>
+          <select id="targetSelect" style="margin-top:8px; width:100%;">
+            <option value="">Keine Rueckmeldung</option>
+          </select>
+
+          <div class="helper muted">Wenn du einen Mitschueler auswaehlst, musst du kurz begruenden, was dir aufgefallen ist.</div>
+
+          <label for="reasonInput" style="display:block; margin-top:14px;"><strong>Begruendung</strong></label>
+          <textarea id="reasonInput" placeholder="Beschreibe kurz und sachlich, was dir aufgefallen ist." disabled></textarea>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="ghost" id="submitNoneBtn">Keine Rueckmeldung senden</button>
+            <button id="submitBtn">Rueckmeldung absenden</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://dnlencbwbbriijmzijci.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_G8SaY8-oyn7TcP-uH6neuA_PNqUR1x0";
+    const FN_STUDENT_LOGIN = "https://dnlencbwbbriijmzijci.functions.supabase.co/student_login";
+    const FN_STUDENT_STATUS = "https://dnlencbwbbriijmzijci.functions.supabase.co/feedback_student_status";
+    const FN_SUBMIT_VOTE = "https://dnlencbwbbriijmzijci.functions.supabase.co/feedback_submit_vote";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = (id) => document.getElementById(id);
+    let activeRound = null;
+    let currentStudentId = localStorage.getItem("lw_feedback_student_id") || "";
+
+    function showMsg(el, ok, text) {
+      el.innerHTML = `<div class="${ok ? "ok" : "bad"}">${text}</div>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    async function apiJson(url, token, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body || {}),
+      });
+      const text = await res.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch {}
+      if (!res.ok) throw new Error((json && (json.error || json.message || json.details)) || text || `HTTP ${res.status}`);
+      return json || {};
+    }
+
+    async function getTokenOrNull() {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token || null;
+    }
+
+    function setReasonState() {
+      const hasTarget = !!$("targetSelect").value;
+      $("reasonInput").disabled = !hasTarget;
+      if (!hasTarget) $("reasonInput").value = "";
+    }
+
+    function renderWaiting(message) {
+      $("formBox").style.display = "none";
+      $("statusBox").innerHTML = `<div class="ok">${message}</div>`;
+    }
+
+    async function loadStatus() {
+      const token = await getTokenOrNull();
+      if (!token) {
+        $("loginCard").style.display = "block";
+        $("app").style.display = "none";
+        return;
+      }
+
+      $("loginCard").style.display = "none";
+      $("app").style.display = "block";
+
+      try {
+        const payload = await apiJson(FN_STUDENT_STATUS, token, { student_id: currentStudentId || null });
+        currentStudentId = payload.student?.id || currentStudentId || "";
+        if (currentStudentId) localStorage.setItem("lw_feedback_student_id", currentStudentId);
+        $("studentName").textContent = payload.student?.display_name || "—";
+        $("classPill").textContent = `Klasse: ${payload.student?.class_name || "—"}`;
+
+        activeRound = payload.round || null;
+        if (!activeRound) {
+          $("roundPill").textContent = "Runde: keine aktiv";
+          renderWaiting("Aktuell gibt es fuer dich keine aktive Rueckmeldungsrunde.");
+          return;
+        }
+
+        $("roundPill").textContent = `${payload.round.group_name} • SW ${payload.round.school_week}`;
+
+        if (!payload.round.is_present) {
+          renderWaiting("Du bist fuer diese Runde nicht als anwesend markiert.");
+          return;
+        }
+
+        if (payload.round.has_voted) {
+          renderWaiting("Deine Rueckmeldung wurde bereits abgegeben. Danke.");
+          return;
+        }
+
+        $("statusBox").innerHTML = `<div class="muted">Waehle einen Mitschueler aus oder sende "keine Rueckmeldung". Deine Eingabe ist nur fuer die Lehrkraft sichtbar.</div>`;
+        $("formBox").style.display = "block";
+        $("targetSelect").innerHTML = [`<option value="">Keine Rueckmeldung</option>`].concat(
+          (payload.selectable_students || []).map((student) =>
+            `<option value="${student.id}">${escapeHtml(student.display_name || "—")} ${student.class_name ? `(${escapeHtml(student.class_name)})` : ""}</option>`
+          )
+        ).join("");
+        $("reasonInput").value = "";
+        setReasonState();
+      } catch (e) {
+        $("statusBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(String(e.message || e))}</div>`;
+        $("formBox").style.display = "none";
+      }
+    }
+
+    async function codeLogin() {
+      const code = $("code").value.trim().toUpperCase();
+      if (!code) return showMsg($("loginMsg"), false, "Bitte Code eingeben.");
+
+      $("loginBtn").disabled = true;
+      $("loginBtn").textContent = "Anmeldung...";
+      $("loginMsg").innerHTML = "";
+
+      try {
+        const json = await apiJson(FN_STUDENT_LOGIN, null, { code });
+        const email = json.email;
+        if (!email || !json.student?.id) throw new Error("Loginantwort unvollstaendig.");
+        currentStudentId = json.student.id;
+        localStorage.setItem("lw_feedback_student_id", currentStudentId);
+
+        const { error } = await supabase.auth.signInWithPassword({ email, password: code });
+        if (error) throw error;
+
+        await loadStatus();
+        showMsg($("loginMsg"), true, `Willkommen, <strong>${escapeHtml(json.student.display_name || "—")}</strong>.`);
+      } catch (e) {
+        showMsg($("loginMsg"), false, `Login fehlgeschlagen: ${escapeHtml(String(e.message || e))}`);
+      } finally {
+        $("loginBtn").disabled = false;
+        $("loginBtn").textContent = "Anmelden";
+      }
+    }
+
+    async function submitVote(targetStudentId) {
+      const token = await getTokenOrNull();
+      if (!token || !activeRound?.id) return;
+
+      const reason = $("reasonInput").value.trim();
+      if (targetStudentId && !reason) {
+        $("statusBox").innerHTML = `<div class="bad">Bitte eine Begruendung angeben.</div>`;
+        return;
+      }
+
+      $("submitBtn").disabled = true;
+      $("submitNoneBtn").disabled = true;
+
+      try {
+        await apiJson(FN_SUBMIT_VOTE, token, {
+          round_id: activeRound.id,
+          target_student_id: targetStudentId || null,
+          reason: targetStudentId ? reason : null,
+          student_id: currentStudentId || null,
+        });
+        await loadStatus();
+      } catch (e) {
+        $("statusBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(String(e.message || e))}</div>`;
+      } finally {
+        $("submitBtn").disabled = false;
+        $("submitNoneBtn").disabled = false;
+      }
+    }
+
+    $("loginBtn").addEventListener("click", codeLogin);
+    $("code").addEventListener("keydown", (e) => { if (e.key === "Enter") codeLogin(); });
+    $("targetSelect").addEventListener("change", setReasonState);
+    $("refreshBtn").addEventListener("click", loadStatus);
+    $("submitNoneBtn").addEventListener("click", () => submitVote(null));
+    $("submitBtn").addEventListener("click", () => submitVote($("targetSelect").value || null));
+    $("logoutBtn").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      activeRound = null;
+      currentStudentId = "";
+      localStorage.removeItem("lw_feedback_student_id");
+      $("formBox").style.display = "none";
+      await loadStatus();
+    });
+
+    supabase.auth.onAuthStateChange(() => { loadStatus(); });
+    loadStatus();
+  </script>
+</body>
+</html>
