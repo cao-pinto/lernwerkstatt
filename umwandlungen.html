@@ -291,6 +291,9 @@
     }
 
 
+    const MIN_TASK_VIEW_MS = 700;
+    const TASK_SUBMIT_LOCK_MS = 280;
+
     let studentId = null;
     let studentName = null;
 
@@ -304,6 +307,8 @@
     let wrong = 0;
     let streak = 0;
     let questionNo = 0;
+    let taskShownAt = 0;
+    let submitLocked = false;
 
     let currentTask = null;
 
@@ -488,9 +493,25 @@
       const inV = toCommaString(currentTask.inputValue);
       $("task").textContent = `${inV} ${currentTask.from.symbol} = ? ${currentTask.to.symbol}`;
       $("answer").value = "";
+      $("answer").disabled = false;
+      $("okBtn").disabled = false;
+      taskShownAt = Date.now();
+      submitLocked = false;
       $("answer").focus();
       renderHint(currentTask);
       fb.style.display = "none";
+    }
+
+    function beginTaskSubmit(){
+      if (submitLocked) return false;
+      if ((Date.now() - taskShownAt) < MIN_TASK_VIEW_MS) {
+        showMsg(fb, false, "⚠️ Bitte die Aufgabe kurz ansehen, bevor du bestätigst.");
+        return false;
+      }
+      submitLocked = true;
+      $("answer").disabled = true;
+      $("okBtn").disabled = true;
+      return true;
     }
 
     function tick(){
@@ -535,12 +556,14 @@
 
     function check(){
       if (!currentTask) return;
+      if (!$("answer").value.trim()) return;
 
       const val = parseUserNumber($("answer").value);
       if (val == null) {
         showMsg(fb, false, "⚠️ Bitte eine gültige Zahl eingeben (Komma oder Punkt). ");
         return;
       }
+      if (!beginTaskSubmit()) return;
 
       const expected = currentTask.expected;
       const isRight = Math.abs(val - expected) < 1e-9;
@@ -557,7 +580,7 @@
       }
 
       updateAccUI();
-      renderTask();
+      setTimeout(renderTask, TASK_SUBMIT_LOCK_MS);
     }
 
     async function stop(){
@@ -769,7 +792,13 @@
     $("startBtn").addEventListener("click", startRun);
     $("okBtn").addEventListener("click", check);
     $("stopBtn").addEventListener("click", stop);
-    $("answer").addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+    $("answer").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (e.repeat) return;
+        check();
+      }
+    });
 
     $("refreshMeBtn").addEventListener("click", loadHistory);
     $("refreshHsBtn").addEventListener("click", loadHighscores);

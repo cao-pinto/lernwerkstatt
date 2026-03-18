@@ -202,6 +202,7 @@
     const FN_MANAGER_CREATE_TEACHER = "https://dnlencbwbbriijmzijci.functions.supabase.co/manager_create_teacher";
     const FN_MANAGER_DELETE_TEACHER = "https://dnlencbwbbriijmzijci.functions.supabase.co/manager_delete_teacher";
     const FN_MANAGER_DELETE_STUDENT = "https://dnlencbwbbriijmzijci.functions.supabase.co/manager_delete_student";
+    const FN_TEACHER_GROUP_ATTEMPTS = "https://dnlencbwbbriijmzijci.functions.supabase.co/teacher_group_attempts";
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const $ = (id) => document.getElementById(id);
@@ -540,15 +541,21 @@
         return;
       }
 
-      const ids = groupMembers.map(s => s.id);
-      const { data: attempts, error } = await supabase
-        .from("attempts")
-        .select("student_id,game,mode,correct_count,wrong_count,total_count,accuracy,created_at")
-        .in("student_id", ids)
-        .order("created_at", { ascending: false });
+      const token = await getTokenOrNull();
+      if (!token) {
+        $("resultsBox").innerHTML = `<div class="bad">Kein Login-Token.</div>`;
+        return;
+      }
 
-      if (error) {
-        $("resultsBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(error.message)}</div>`;
+      let attempts = [];
+      try {
+        const payload = await apiJson(FN_TEACHER_GROUP_ATTEMPTS, token, {
+          group_id: gid,
+          teacher_id: me?.id || null
+        });
+        attempts = payload.attempts || [];
+      } catch (e) {
+        $("resultsBox").innerHTML = `<div class="bad">Fehler: ${escapeHtml(String(e.message || e))}</div>`;
         return;
       }
 

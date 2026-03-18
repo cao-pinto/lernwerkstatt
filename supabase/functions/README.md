@@ -11,6 +11,7 @@
 - `manager_create_teacher`
 - `manager_delete_teacher`
 - `manager_delete_student`
+- `teacher_group_attempts`
 - `get_highscores`
 - `get_highscores_binary`
 - `get_highscores_tree`
@@ -36,6 +37,7 @@ supabase functions deploy feedback_start_round
 supabase functions deploy feedback_student_status
 supabase functions deploy feedback_submit_vote
 supabase functions deploy feedback_teacher_round_status
+supabase functions deploy teacher_group_attempts
 supabase functions deploy manager_create_teacher
 supabase functions deploy manager_delete_teacher
 supabase functions deploy manager_delete_student

@@ -217,6 +217,9 @@
     let studentId = null;
     let studentName = null;
 
+    const MIN_TASK_VIEW_MS = 700;
+    const TASK_SUBMIT_LOCK_MS = 260;
+
     let selectedMode = "small"; // "small" | "big"
     let max = 10;
 
@@ -227,6 +230,8 @@
     let wrong = 0;
     let streak = 0;
     let bestStreak = 0;
+    let taskShownAt = 0;
+    let submitLocked = false;
 
     let a = 0, b = 0;
 
@@ -258,7 +263,23 @@
       b = randInt(1, max);
       $("task").textContent = `${a} × ${b} = ?`;
       $("answer").value = "";
+      $("answer").disabled = false;
+      $("okBtn").disabled = false;
+      taskShownAt = Date.now();
+      submitLocked = false;
       $("answer").focus();
+    }
+
+    function beginTaskSubmit(){
+      if (submitLocked) return false;
+      if ((Date.now() - taskShownAt) < MIN_TASK_VIEW_MS) {
+        showMsg(fb, false, "⚠️ Bitte die Aufgabe kurz ansehen, bevor du bestätigst.");
+        return false;
+      }
+      submitLocked = true;
+      $("answer").disabled = true;
+      $("okBtn").disabled = true;
+      return true;
     }
 
     function tick(){
@@ -293,7 +314,9 @@
 
     function check(){
       const raw = $("answer").value.trim();
+      if (!raw) return;
       if (!/^\d+$/.test(raw)) { showMsg(fb, false, "⚠️ Bitte nur Ziffern eingeben."); return; }
+      if (!beginTaskSubmit()) return;
 
       const ans = Number(raw);
       const correct = a * b;
@@ -310,7 +333,7 @@
       }
 
       updateAccUI();
-      newTask();
+      setTimeout(newTask, TASK_SUBMIT_LOCK_MS);
     }
 
     async function stop(){
@@ -526,7 +549,13 @@
 
     $("okBtn").addEventListener("click", check);
     $("stopBtn").addEventListener("click", stop);
-    $("answer").addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+    $("answer").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (e.repeat) return;
+        check();
+      }
+    });
 
     $("refreshMeBtn").addEventListener("click", loadHistory);
     $("refreshHsBtn").addEventListener("click", loadHighscores);

@@ -236,6 +236,8 @@
 
 
     const DURATION = 90;
+    const MIN_TASK_VIEW_MS = 700;
+    const TASK_SUBMIT_LOCK_MS = 280;
 
     let studentId = null;
 
@@ -249,6 +251,8 @@
 
     let correct = 0;
     let wrong = 0;
+    let questionShownAt = 0;
+    let submitLocked = false;
 
     // streak counter resets at 3 (bonus)
     let streakCounter = 0;
@@ -393,7 +397,11 @@
 
       const ans = $("answer");
       ans.value = "";
+      ans.disabled = false;
       ans.classList.remove("wrongInput");
+      $("submitBtn").disabled = false;
+      questionShownAt = Date.now();
+      submitLocked = false;
       ans.focus();
 
       $("fb").style.display = "none";
@@ -416,6 +424,18 @@
         $("question").textContent = `Wandle ${current.dec} ins Binärsystem um.`;
         ans.placeholder = "z.B. 101 oder 0000 0101";
       }
+    }
+
+    function beginQuestionSubmit(){
+      if (submitLocked) return false;
+      if ((Date.now() - questionShownAt) < MIN_TASK_VIEW_MS) {
+        showMsg($("fb"), false, "⚠️ Bitte die Aufgabe kurz ansehen, bevor du bestätigst.");
+        return false;
+      }
+      submitLocked = true;
+      $("answer").disabled = true;
+      $("submitBtn").disabled = true;
+      return true;
     }
 
     function tick(){
@@ -577,6 +597,7 @@
       const ans = $("answer");
       const input = ans.value.trim();
       if (!input) return;
+      if (!beginQuestionSubmit()) return;
 
       if (current.type === "d2b"){
         const clean = normalizeBinInput(input);
@@ -594,7 +615,7 @@
           correct++; $("correct").textContent = String(correct);
           addStreakSuccess();
           showMsg($("fb"), true, `✅ Richtig! ${group4(toBin(current.dec, 8))} = ${current.dec}`);
-          renderQuestion();
+          setTimeout(renderQuestion, TASK_SUBMIT_LOCK_MS);
         } else {
           wrong++; resetStreak();
           ans.classList.add("wrongInput");
@@ -615,7 +636,7 @@
           correct++; $("correct").textContent = String(correct);
           addStreakSuccess();
           showMsg($("fb"), true, `✅ Richtig! ${group4(current.bin8Display)} = ${current.dec}`);
-          renderQuestion();
+          setTimeout(renderQuestion, TASK_SUBMIT_LOCK_MS);
         } else {
           wrong++; resetStreak();
           ans.classList.add("wrongInput");
@@ -690,7 +711,13 @@
     });
 
     $("submitBtn").addEventListener("click", checkAnswer);
-    $("answer").addEventListener("keydown", (e)=>{ if (e.key==="Enter") checkAnswer(); });
+    $("answer").addEventListener("keydown", (e)=>{
+      if (e.key==="Enter"){
+        e.preventDefault();
+        if (e.repeat) return;
+        checkAnswer();
+      }
+    });
 
     $("refreshHsBtn").addEventListener("click", loadHighscores);
 
