@@ -262,7 +262,17 @@
         if (m === "big") return "1x1 Trainer - grosses Einmaleins";
         return "1x1 Trainer";
       }
-      if (g === "tree") return m ? `Rechenbaum - ${m}` : "Rechenbaum";
+      if (g === "tree") {
+        const treeMap = {
+          tree10: "Rechenbaum - 0 bis 10",
+          tree100: "Rechenbaum - 0 bis 100",
+          tree_int10: "Rechenbaum - minus 10 bis plus 10",
+          tree_int100: "Rechenbaum - minus 100 bis plus 100",
+          treeInt10: "Rechenbaum - minus 10 bis plus 10",
+          treeInt100: "Rechenbaum - minus 100 bis plus 100"
+        };
+        return treeMap[m] || (m ? `Rechenbaum - ${m}` : "Rechenbaum");
+      }
       if (g === "binary") return m ? `Binaer - ${m}` : "Binaer";
       if (g === "conversion") {
         const map = {

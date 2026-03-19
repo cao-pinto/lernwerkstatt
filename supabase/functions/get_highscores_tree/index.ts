@@ -2,18 +2,17 @@ import { corsHeaders, fail, getAdminClient, ok } from "../_shared/common.ts";
 
 type AttemptRow = { student_id: string; correct_count: number | null };
 type StudentRow = { id: string; school_id: string | null; display_name: string | null };
-type TreeMode = "tree10" | "tree100" | "treeInt10" | "treeInt100";
+type TreeMode = "tree10" | "tree100" | "tree_int10" | "tree_int100";
 
 function parseStudentId(body: unknown): string | null {
   const id = String((body as { student_id?: string } | null)?.student_id ?? "").trim();
   return /^[0-9a-fA-F-]{36}$/.test(id) ? id : null;
 }
 
-async function top10ByMode(
+async function loadAttemptsForMode(
   supabase: ReturnType<typeof getAdminClient>,
-  schoolId: string,
-  mode: TreeMode,
-): Promise<Array<{ name: string; trees: number }>> {
+  mode: string,
+): Promise<AttemptRow[]> {
   const { data: attempts, error: attemptsErr } = await supabase
     .from("attempts")
     .select("student_id,correct_count")
@@ -23,8 +22,16 @@ async function top10ByMode(
     .limit(5000);
 
   if (attemptsErr) throw new Error(`attempts ${mode} query fehlgeschlagen: ${attemptsErr.message}`);
+  return (attempts || []) as AttemptRow[];
+}
 
-  const rows = (attempts || []) as AttemptRow[];
+async function top10ByMode(
+  supabase: ReturnType<typeof getAdminClient>,
+  schoolId: string,
+  modes: string[],
+): Promise<Array<{ name: string; trees: number }>> {
+  const chunks = await Promise.all(modes.map((mode) => loadAttemptsForMode(supabase, mode)));
+  const rows = chunks.flat();
   const ids = Array.from(new Set(rows.map((r) => r.student_id).filter(Boolean)));
   if (!ids.length) return [];
 
@@ -77,10 +84,10 @@ Deno.serve(async (req) => {
     if (!schoolId) return fail("Schule zum student_id nicht gefunden", 404);
 
     const [v10, v100, vInt10, vInt100] = await Promise.all([
-      top10ByMode(supabase, schoolId, "tree10"),
-      top10ByMode(supabase, schoolId, "tree100"),
-      top10ByMode(supabase, schoolId, "treeInt10"),
-      top10ByMode(supabase, schoolId, "treeInt100"),
+      top10ByMode(supabase, schoolId, ["tree10"]),
+      top10ByMode(supabase, schoolId, ["tree100"]),
+      top10ByMode(supabase, schoolId, ["tree_int10", "treeInt10"]),
+      top10ByMode(supabase, schoolId, ["tree_int100", "treeInt100"]),
     ]);
 
     return ok({ ok: true, v10, v100, vInt10, vInt100 });

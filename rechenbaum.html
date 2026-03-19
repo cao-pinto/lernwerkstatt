@@ -267,7 +267,7 @@
     const DURATION = 300;
 
     let studentId = null;
-    let variant = "tree10"; // tree10 | tree100 | treeInt10 | treeInt100
+    let variant = "tree10"; // tree10 | tree100 | tree_int10 | tree_int100
 
     let timer = null;
     let t = DURATION;
@@ -366,8 +366,8 @@
       variant = v;
       $("v10Btn").classList.toggle("active", v === "tree10");
       $("v100Btn").classList.toggle("active", v === "tree100");
-      $("vInt10Btn").classList.toggle("active", v === "treeInt10");
-      $("vInt100Btn").classList.toggle("active", v === "treeInt100");
+      $("vInt10Btn").classList.toggle("active", v === "tree_int10");
+      $("vInt100Btn").classList.toggle("active", v === "tree_int100");
     }
 
     function showMsg(el, ok, text) {
@@ -415,7 +415,7 @@
         }
         return true;
       }
-      if (variant === "treeInt10"){
+      if (variant === "tree_int10"){
         // Kopfrechen-Integer: Ergebnisse nicht zu groß im Betrag
         const maxAbsMid = 120, maxAbsEnd = 250;
         for (let i=0;i<values.length;i++){
@@ -429,14 +429,14 @@
       if (variant === "tree100"){
         return values.every(v => v != null && v >= 0 && v <= 99999);
       }
-      // treeInt100
+      // tree_int100
       return values.every(v => v != null && Math.abs(v) <= 99999);
     }
 
     function leavesRange(){
       if (variant === "tree10") return { min:0, max:10 };
       if (variant === "tree100") return { min:0, max:100 };
-      if (variant === "treeInt10") return { min:-10, max:10 };
+      if (variant === "tree_int10") return { min:-10, max:10 };
       return { min:-100, max:100 };
     }
 
@@ -458,7 +458,7 @@
         if (!capsOk(R)) continue;
 
         // optional: nicht alles null
-        if ((variant === "tree10" || variant === "treeInt10") && R.filter(x=>x!==0).length < 2) continue;
+        if ((variant === "tree10" || variant === "tree_int10") && R.filter(x=>x!==0).length < 2) continue;
 
         return { L, ops, R };
       }
@@ -565,7 +565,7 @@
       const raw = inp.value.trim();
 
       // allow negatives for integer variants
-      const isInt = (variant === "treeInt10" || variant === "treeInt100");
+      const isInt = (variant === "tree_int10" || variant === "tree_int100");
       const re = isInt ? /^-?\d+$/ : /^\d+$/;
 
       if (!re.test(raw)) {
@@ -652,7 +652,7 @@
     function variantLabel(v){
       if (v==="tree10") return "0–10";
       if (v==="tree100") return "0–100";
-      if (v==="treeInt10") return "−10…+10";
+      if (v==="tree_int10") return "−10…+10";
       return "−100…+100";
     }
 
@@ -693,8 +693,9 @@
         try { json = JSON.parse(text); } catch {}
 
         if (!res.ok || !json?.ok){
-          $("hsLeft").innerHTML = `<div class="bad">Highscore-Fehler</div>`;
-          $("hsRight").innerHTML = `<div class="bad">Highscore-Fehler</div>`;
+          const details = json?.error || json?.details || text || "Highscore-Fehler";
+          $("hsLeft").innerHTML = `<div class="bad">${escapeHtml(String(details))}</div>`;
+          $("hsRight").innerHTML = `<div class="bad">${escapeHtml(String(details))}</div>`;
           return;
         }
 
@@ -774,8 +775,8 @@
 
     $("v10Btn").addEventListener("click", ()=> setVariant("tree10"));
     $("v100Btn").addEventListener("click", ()=> setVariant("tree100"));
-    $("vInt10Btn").addEventListener("click", ()=> setVariant("treeInt10"));
-    $("vInt100Btn").addEventListener("click", ()=> setVariant("treeInt100"));
+    $("vInt10Btn").addEventListener("click", ()=> setVariant("tree_int10"));
+    $("vInt100Btn").addEventListener("click", ()=> setVariant("tree_int100"));
 
     $("startBtn").addEventListener("click", start);
     $("stopBtn").addEventListener("click", stop);
