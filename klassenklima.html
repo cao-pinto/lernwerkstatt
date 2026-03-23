@@ -1,0 +1,1906 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LernWerkstatt - Klassenklima</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --ink: #10203a;
+      --ink-2: #33415d;
+      --muted: #6b7a95;
+      --paper: #f4f8ff;
+      --card: rgba(255, 255, 255, 0.92);
+      --rule: rgba(95, 124, 168, 0.2);
+      --accent: #1f6feb;
+      --accent-2: #00a8a8;
+      --light: #a16207;
+      --light-bg: #fef3c7;
+      --medium: #c2410c;
+      --medium-bg: #ffedd5;
+      --severe: #991b1b;
+      --severe-bg: #fee2e2;
+      --dark: #0f172a;
+      --dark-2: #172033;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(920px 520px at 100% -10%, rgba(31, 111, 235, 0.18), rgba(31, 111, 235, 0)),
+        radial-gradient(780px 440px at -10% 8%, rgba(0, 168, 168, 0.12), rgba(0, 168, 168, 0)),
+        linear-gradient(180deg, #eef6ff 0%, #f7fbff 100%);
+    }
+
+    .appHeader {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 24px;
+      background: rgba(16, 32, 58, 0.94);
+      color: white;
+      border-bottom: 3px solid var(--accent);
+      backdrop-filter: blur(8px);
+    }
+
+    .appTitle { font-size: 1.22rem; font-weight: 800; }
+    .appSub { font-size: 0.72rem; letter-spacing: .05em; text-transform: uppercase; color: #b7c7e3; margin-top: 2px; }
+    .modeToggle {
+      display: none;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+    }
+    .modeToggle.active { display: inline-flex; }
+    .modeBtn {
+      border: 0;
+      background: transparent;
+      color: #dbe7fb;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+    .modeBtn.active {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      color: white;
+    }
+
+    .hdrMeta { display: none; gap: 10px; flex-wrap: wrap; }
+    .hdrMeta.active { display: flex; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      color: #e8f0ff;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .hdrStats {
+      display: none;
+      gap: 12px;
+      margin-left: auto;
+    }
+    .hdrStats.active { display: flex; }
+    .hdrStat {
+      border-left: 1px solid rgba(255,255,255,.15);
+      padding-left: 12px;
+      min-width: 56px;
+      text-align: center;
+    }
+    .hdrNum { font-size: 1.2rem; font-weight: 800; line-height: 1; }
+    .hdrNum.l { color: #facc15; }
+    .hdrNum.m { color: #fb923c; }
+    .hdrNum.s { color: #fca5a5; }
+    .hdrLbl { font-size: 0.62rem; color: #b7c7e3; text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
+
+    .topActions {
+      margin-left: auto;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .headerLink, .headerGhost, .headerDanger {
+      text-decoration: none;
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    .headerLink, .headerGhost {
+      background: rgba(255,255,255,.9);
+      color: #173258;
+    }
+    .headerDanger {
+      display: none;
+      background: rgba(255,255,255,.12);
+      color: white;
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .headerDanger.active { display: inline-flex; }
+
+    .wrap {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 22px 24px 36px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(138, 162, 199, 0.18);
+      border-radius: 24px;
+      box-shadow: 0 20px 45px rgba(16, 32, 58, 0.08);
+      backdrop-filter: blur(8px);
+    }
+
+    .loginShell {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 16px;
+    }
+    .loginIntro, .loginCard {
+      padding: 24px;
+    }
+    .loginIntro {
+      background:
+        radial-gradient(320px 200px at 100% 0%, rgba(31, 111, 235, 0.18), rgba(31, 111, 235, 0)),
+        linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,250,255,.9));
+    }
+    .loginIntro h1 { margin: 0 0 10px; font-size: 1.8rem; }
+    .loginIntro p { margin: 0; color: var(--ink-2); line-height: 1.68; }
+    .loginList { margin: 20px 0 0; padding-left: 18px; color: var(--ink-2); line-height: 1.7; }
+    .loginGrid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .loginBox {
+      border: 1px solid var(--rule);
+      border-radius: 20px;
+      padding: 18px;
+      background: rgba(255,255,255,.92);
+    }
+    .loginBox h2 { margin: 0 0 6px; font-size: 1.08rem; }
+    .muted { color: var(--muted); }
+
+    input, select, textarea, button {
+      font: inherit;
+    }
+    input, select, textarea {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid #cfdaee;
+      padding: 11px 13px;
+      background: white;
+      color: var(--ink);
+    }
+    textarea {
+      min-height: 112px;
+      resize: vertical;
+      line-height: 1.58;
+    }
+    button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 11px 15px;
+      font-weight: 800;
+    }
+    button.primary {
+      background: linear-gradient(90deg, var(--accent), #2b8eff);
+      color: white;
+    }
+    button.ghost {
+      background: #e7edf7;
+      color: var(--ink);
+    }
+    button.danger {
+      background: var(--severe-bg);
+      color: var(--severe);
+    }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .stack { display: flex; flex-direction: column; gap: 12px; }
+    .msg { margin-top: 12px; padding: 12px 13px; border-radius: 14px; }
+    .msg.ok { background: #ecfdf5; border: 1px solid #10b98133; color: #166534; }
+    .msg.bad { background: #fef2f2; border: 1px solid #ef444433; color: #991b1b; }
+
+    #app { display: none; }
+    .statusCard {
+      margin-top: 16px;
+      padding: 18px 20px;
+    }
+    .statusRow {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .statusTitle { margin: 0; font-size: 1.05rem; }
+    .statusSub { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
+    .statusActions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .workspace {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 16px;
+      min-height: 640px;
+    }
+
+    .panel {
+      min-width: 0;
+      overflow: hidden;
+    }
+    .formPanel {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .sectionHead {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--ink-2);
+      margin-bottom: 10px;
+    }
+    .sectionHead::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+    }
+    .stepN {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--dark);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+    .box {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--rule);
+      background: rgba(255,255,255,.78);
+    }
+    .catRow {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .catChip {
+      border-radius: 999px;
+      border: 1px solid var(--rule);
+      background: white;
+      padding: 7px 11px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .catChip.on { box-shadow: 0 8px 18px rgba(16,32,58,.08); }
+
+    .itemList {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .itemBtn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--rule);
+      background: white;
+      padding: 10px 11px;
+      text-align: left;
+      color: var(--ink-2);
+    }
+    .itemBtn.on {
+      background: #eef6ff;
+      font-weight: 700;
+    }
+    .itemPip {
+      width: 4px;
+      height: 20px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .itemSev {
+      margin-left: auto;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .sevGrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .sevBtn {
+      border-radius: 14px;
+      border: 2px solid transparent;
+      background: white;
+      color: var(--ink-2);
+      text-align: center;
+      padding: 10px 8px;
+      font-size: 0.78rem;
+    }
+    .sevBtn strong { display: block; font-size: 1rem; margin-bottom: 3px; }
+    .sevBtn.l { border-color: #facc15; color: var(--light); }
+    .sevBtn.m { border-color: #fb923c; color: var(--medium); }
+    .sevBtn.s { border-color: #fca5a5; color: var(--severe); }
+    .sevBtn.on.l { background: var(--light-bg); border-color: var(--light); }
+    .sevBtn.on.m { background: var(--medium-bg); border-color: var(--medium); }
+    .sevBtn.on.s { background: var(--severe-bg); border-color: var(--severe); }
+    .hint { color: var(--muted); font-size: 0.78rem; line-height: 1.6; margin-top: 8px; }
+    .helperBox {
+      border-radius: 16px;
+      border: 1px solid var(--rule);
+      padding: 12px 13px;
+      background: rgba(238,246,255,.7);
+      color: var(--ink-2);
+      font-size: 0.82rem;
+      line-height: 1.62;
+    }
+
+    .reactionCard {
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--rule);
+      background: white;
+    }
+    .reactionHead {
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+    .reactionHead.l { background: var(--light-bg); color: var(--light); }
+    .reactionHead.m { background: var(--medium-bg); color: var(--medium); }
+    .reactionHead.s { background: var(--severe-bg); color: var(--severe); }
+    .reactionSteps { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .reactionStep { display: flex; gap: 10px; align-items: flex-start; }
+    .reactionBadge {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .reactionBadge.l { background: var(--light); }
+    .reactionBadge.m { background: var(--medium); }
+    .reactionBadge.s { background: var(--severe); }
+    .reactionNote {
+      margin: 0 14px 14px;
+      padding: 11px 12px;
+      border-radius: 14px;
+      background: #eef6ff;
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.55;
+    }
+
+    .mainPanel {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .teacherControls {
+      padding: 18px;
+      border-bottom: 1px solid var(--rule);
+      display: none;
+      gap: 12px;
+      flex-direction: column;
+    }
+    .teacherControls.active { display: flex; }
+    .controlGrid {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr auto auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .studentSummary {
+      display: none;
+      padding: 18px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .studentSummary.active { display: block; }
+
+    .summaryStats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .statCard {
+      border-radius: 18px;
+      border: 1px solid var(--rule);
+      background: rgba(255,255,255,.8);
+      padding: 14px;
+    }
+    .statCard strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .entryList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 18px;
+    }
+    .entryEmpty {
+      padding: 38px 14px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--rule);
+      border-radius: 18px;
+      background: rgba(255,255,255,.6);
+    }
+    .entryCard {
+      border-radius: 18px;
+      border: 1px solid var(--rule);
+      background: white;
+      overflow: hidden;
+    }
+    .entryHead {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 11px 14px;
+      border-bottom: 1px solid #edf2fb;
+    }
+    .entrySev {
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .entrySev.l { background: var(--light-bg); color: var(--light); }
+    .entrySev.m { background: var(--medium-bg); color: var(--medium); }
+    .entrySev.s { background: var(--severe-bg); color: var(--severe); }
+    .entryItem {
+      flex: 1;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+    .entryTime {
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .entryBody {
+      padding: 12px 14px 14px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+    .entryMeta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .entryNote {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: var(--ink-2);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .entryActions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .entryActions button {
+      padding: 8px 11px;
+      border-radius: 12px;
+      font-size: 0.76rem;
+    }
+
+    .classShell {
+      margin-top: 16px;
+      overflow: hidden;
+      background: linear-gradient(180deg, var(--dark) 0%, var(--dark-2) 100%);
+      color: #ecdfd3;
+    }
+    .classTop {
+      padding: 20px 24px 18px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .classTitle { font-size: 1.08rem; font-weight: 800; }
+    .classSub { font-size: 0.75rem; color: #9fb3d3; margin-top: 4px; line-height: 1.6; }
+    .legend {
+      margin-left: auto;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .legendItem {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #bfc9db;
+    }
+    .legendDot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .classMain {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      min-height: 620px;
+    }
+    .cloudArea {
+      padding: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #wordCloud {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: center;
+      justify-content: center;
+      gap: 10px 12px;
+      width: 100%;
+      height: 100%;
+    }
+    .wordTag {
+      border-radius: 999px;
+      padding: 5px 11px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      font-weight: 700;
+      line-height: 1.25;
+      opacity: .58;
+      transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+    }
+    .wordTag:hover { opacity: 1 !important; transform: scale(1.06); }
+    .wordTag.active { opacity: 1 !important; box-shadow: 0 0 12px rgba(255,255,255,.12); }
+    .wordTag.l { color: #facc15; border-color: #a16207; }
+    .wordTag.l.seen { background: #422006; }
+    .wordTag.m { color: #fb923c; border-color: #c2410c; }
+    .wordTag.m.seen { background: #431407; }
+    .wordTag.s { color: #f87171; border-color: #991b1b; }
+    .wordTag.s.seen { background: #450a0a; }
+
+    .impactPanel {
+      border-left: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(9, 14, 25, 0.88);
+      overflow-y: auto;
+    }
+    .impactEmpty, .impactCard {
+      padding: 30px 24px;
+    }
+    .impactEmpty {
+      display: flex;
+      min-height: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #9fb3d3;
+      line-height: 1.7;
+    }
+    .impactBadge {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .impactBadge.l { background: #422006; color: #facc15; border: 1px solid #a16207; }
+    .impactBadge.m { background: #431407; color: #fb923c; border: 1px solid #c2410c; }
+    .impactBadge.s { background: #450a0a; color: #f87171; border: 1px solid #991b1b; }
+    .impactWord {
+      margin-top: 16px;
+      font-size: 1.62rem;
+      font-weight: 800;
+      line-height: 1.3;
+      color: #f1e6d8;
+    }
+    .impactCat {
+      margin-top: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #8fa1be;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      line-height: 1.5;
+    }
+    .impactCount {
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: rgba(255,255,255,.04);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .impactCount strong {
+      font-size: 1.9rem;
+      line-height: 1;
+    }
+    .impactCount strong.l { color: #facc15; }
+    .impactCount strong.m { color: #fb923c; }
+    .impactCount strong.s { color: #f87171; }
+    .impactSection { margin-top: 20px; }
+    .impactHead {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #8fa1be;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      padding-bottom: 6px;
+      margin-bottom: 9px;
+    }
+    .impactBody {
+      font-size: 0.84rem;
+      line-height: 1.75;
+      color: #d9cdbf;
+    }
+    .feelGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .feelChip {
+      border-radius: 12px;
+      padding: 9px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: rgba(255,255,255,.04);
+      color: #c8b8a6;
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 1120px) {
+      .workspace { grid-template-columns: 1fr; }
+      .classMain { grid-template-columns: 1fr; }
+      .impactPanel { border-left: 0; border-top: 1px solid rgba(148, 163, 184, 0.12); }
+      .controlGrid { grid-template-columns: 1fr 1fr; }
+      .summaryStats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 860px) {
+      .wrap { padding: 18px 16px 28px; }
+      .appHeader { padding: 12px 16px; }
+      .loginShell { grid-template-columns: 1fr; }
+      .teacherControls, .studentSummary, .entryList, .cloudArea, .impactCard, .impactEmpty, .classTop { padding-left: 16px; padding-right: 16px; }
+      .controlGrid { grid-template-columns: 1fr; }
+      .summaryStats { grid-template-columns: 1fr; }
+      .entryBody { grid-template-columns: 1fr; }
+      .entryActions { justify-content: flex-start; }
+      .feelGrid { grid-template-columns: 1fr; }
+      .hdrStats { width: 100%; margin-left: 0; }
+      .topActions { width: 100%; margin-left: 0; justify-content: space-between; }
+    }
+  </style>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <div class="appHeader">
+    <div>
+      <div class="appTitle">LernWerkstatt · Klassenklima</div>
+      <div class="appSub">Dokumentation, Visualisierung und Reflexion</div>
+    </div>
+
+    <div class="modeToggle" id="modeToggle">
+      <button class="modeBtn active" id="tabEntry" type="button">Ansicht</button>
+      <button class="modeBtn" id="tabClass" type="button">Klassenansicht</button>
+    </div>
+
+    <div class="hdrMeta" id="hdrMeta">
+      <span class="pill" id="rolePill">Rolle: —</span>
+      <span class="pill" id="contextPill">Kontext: —</span>
+    </div>
+
+    <div class="hdrStats" id="hdrStats">
+      <div class="hdrStat"><div class="hdrNum" id="statAll">0</div><div class="hdrLbl">Einträge</div></div>
+      <div class="hdrStat"><div class="hdrNum l" id="statLight">0</div><div class="hdrLbl">Leicht</div></div>
+      <div class="hdrStat"><div class="hdrNum m" id="statMedium">0</div><div class="hdrLbl">Mittel</div></div>
+      <div class="hdrStat"><div class="hdrNum s" id="statSevere">0</div><div class="hdrLbl">Schwer</div></div>
+    </div>
+
+    <div class="topActions">
+      <button class="headerDanger" id="logoutBtn" type="button">Logout</button>
+      <a class="headerLink" href="./index.html">← Startseite</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card loginShell" id="loginScreen">
+      <div class="loginIntro">
+        <h1>Klassenklima gemeinsam sichtbar machen</h1>
+        <p>Lehrkräfte können pro Klasse und Tag genau ein Tagesprotokoll starten. Schülerinnen und Schüler melden während dieses offenen Zeitfensters anonym Vorfälle, bewerten deren Schwere und tragen so zum Klassenbild bei.</p>
+        <ul class="loginList">
+          <li>Schüler melden sich mit ihrem Schülercode an.</li>
+          <li>Lehrkräfte melden sich mit ihrem normalen Zugang an.</li>
+          <li>Gespeichert werden nur die Vorfälle, nicht wer sie eingetragen hat.</li>
+          <li>Die Klassenansicht zeigt nur tatsächlich erfasste Begriffe, keine Vorlagen.</li>
+        </ul>
+      </div>
+
+      <div class="loginCard">
+        <div class="loginGrid">
+          <div class="loginBox">
+            <h2>Schülerlogin</h2>
+            <p class="muted">Nach dem Login landest du direkt in der Schüleransicht deiner Klasse.</p>
+            <div class="stack">
+              <input id="studentCode" placeholder="Schülercode" style="text-transform:uppercase;" />
+              <button class="primary" id="studentLoginBtn" type="button">Mit Code anmelden</button>
+            </div>
+            <div id="studentLoginMsg"></div>
+          </div>
+
+          <div class="loginBox">
+            <h2>Lehrkraftlogin</h2>
+            <p class="muted">Lehrkräfte starten, schließen und bearbeiten das Tagesprotokoll ihrer Gruppe.</p>
+            <div class="stack">
+              <input id="teacherEmail" type="email" placeholder="E-Mail" />
+              <input id="teacherPassword" type="password" placeholder="Passwort" />
+              <button class="primary" id="teacherLoginBtn" type="button">Als Lehrkraft anmelden</button>
+            </div>
+            <div id="teacherLoginMsg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="app">
+      <div class="card statusCard">
+        <div class="statusRow">
+          <div>
+            <h2 class="statusTitle" id="statusTitle">—</h2>
+            <p class="statusSub" id="statusSub">—</p>
+          </div>
+          <div class="statusActions">
+            <button class="ghost" id="refreshStateBtn" type="button">Aktualisieren</button>
+            <button class="danger" id="logoutInlineBtn" type="button">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="view active" id="viewEntry">
+        <div class="workspace">
+          <div class="card panel formPanel">
+            <div class="helperBox" id="formInfo">Bitte zuerst anmelden.</div>
+
+            <div class="box">
+              <div class="sectionHead"><span class="stepN">1</span>Kategorie &amp; Vorfall</div>
+              <div class="catRow" id="catRow"></div>
+              <div class="itemList" id="itemList"></div>
+              <div class="hint">Jeder Vorfall ist fachlich vorab eingestuft und kann danach angepasst werden.</div>
+            </div>
+
+            <div class="box">
+              <div class="sectionHead"><span class="stepN">2</span>Schweregrad anpassen</div>
+              <div class="sevGrid">
+                <button class="sevBtn l" id="sevLight" type="button"><strong>🟡</strong>Leicht</button>
+                <button class="sevBtn m" id="sevMedium" type="button"><strong>🟠</strong>Mittel</button>
+                <button class="sevBtn s" id="sevSevere" type="button"><strong>🔴</strong>Schwer</button>
+              </div>
+              <div class="hint">
+                <strong>Leicht:</strong> einzelne Grenzverletzung ohne massive Einschüchterung.<br>
+                <strong>Mittel:</strong> deutliche Herabsetzung, Ausgrenzung oder körperliche Übergriffigkeit.<br>
+                <strong>Schwer:</strong> sexualisiert, systematisch, digital verbreitet oder stark bedrohlich.
+              </div>
+            </div>
+
+            <div class="box">
+              <div class="sectionHead"><span class="stepN">3</span>Notiz</div>
+              <textarea id="noteInput" placeholder="Kontext, Beobachtung oder kurze Ergänzung ..."></textarea>
+            </div>
+
+            <div class="row">
+              <button class="primary" id="saveEntryBtn" type="button" style="flex:1;">Zum Tagesprotokoll hinzufügen</button>
+              <button class="ghost" id="cancelEditBtn" type="button" style="display:none;">Bearbeiten abbrechen</button>
+            </div>
+            <div id="formMsg"></div>
+
+            <div class="reactionCard" id="reactionCard">
+              <div class="reactionHead l" style="display:none;"></div>
+              <div class="reactionSteps"></div>
+              <div class="reactionNote">Wähle zuerst einen Vorfall.</div>
+            </div>
+          </div>
+
+          <div class="card panel mainPanel">
+            <div class="teacherControls" id="teacherControls">
+              <div>
+                <div class="sectionHead"><span class="stepN">T</span>Tagesprotokoll steuern</div>
+                <div class="controlGrid">
+                  <div>
+                    <label for="groupSelect"><strong>Gruppe</strong></label>
+                    <select id="groupSelect"></select>
+                  </div>
+                  <div>
+                    <label for="dateInput"><strong>Datum</strong></label>
+                    <input id="dateInput" type="date" />
+                  </div>
+                  <button class="primary" id="startSessionBtn" type="button">Starten</button>
+                  <button class="ghost" id="reloadSessionBtn" type="button">Aktualisieren</button>
+                  <button class="danger" id="closeSessionBtn" type="button" disabled>Schließen</button>
+                </div>
+              </div>
+              <div id="teacherSessionMsg" class="muted">Bitte Gruppe und Datum wählen.</div>
+            </div>
+
+            <div class="studentSummary" id="studentSummary">
+              <div class="sectionHead"><span class="stepN">S</span>Aktuelle Sitzung</div>
+              <div id="studentSessionMsg" class="muted">Für deine Klasse ist gerade kein offenes Tagesprotokoll aktiv.</div>
+            </div>
+
+            <div class="entryList" id="entryList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="viewClass">
+        <div class="card classShell">
+          <div class="classTop">
+            <div>
+              <div class="classTitle">Wie verletzend sind Worte und Taten?</div>
+              <div class="classSub">Die Wortwolke zeigt nur tatsächlich eingetragene Vorfälle des aktuell geladenen Tagesprotokolls.</div>
+            </div>
+            <div class="legend">
+              <div class="legendItem"><span class="legendDot" style="background:#facc15;"></span>Leicht</div>
+              <div class="legendItem"><span class="legendDot" style="background:#fb923c;"></span>Mittel</div>
+              <div class="legendItem"><span class="legendDot" style="background:#f87171;"></span>Schwer</div>
+            </div>
+          </div>
+          <div class="classMain">
+            <div class="cloudArea"><div id="wordCloud"></div></div>
+            <div class="impactPanel" id="impactPanel">
+              <div class="impactEmpty">Wähle einen Begriff aus der Wortwolke, um Wirkung, Gefühle und pädagogische Hinweise zu sehen.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const SUPABASE_URL = "https://dnlencbwbbriijmzijci.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_G8SaY8-oyn7TcP-uH6neuA_PNqUR1x0";
+    const FN_STUDENT_LOGIN = "https://dnlencbwbbriijmzijci.functions.supabase.co/student_login";
+    const FN_TEACHER_STATUS = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_session_status";
+    const FN_TEACHER_START = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_start_session";
+    const FN_TEACHER_CLOSE = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_close_session";
+    const FN_TEACHER_UPDATE = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_update_entry";
+    const FN_STUDENT_STATUS = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_student_status";
+    const FN_STUDENT_ADD = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_student_add_entry";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = (id) => document.getElementById(id);
+
+    const STORAGE_STUDENT_ID = "lw_klassenklima_student_id";
+
+    const CATEGORIES = {
+      verbal: {
+        label: "Verbale Grenzverletzungen",
+        color: "#c0392b",
+        items: [
+          { t: "Du bist hässlich", sev: "l" },
+          { t: "Du bist so dumm", sev: "l" },
+          { t: "Du stinkst", sev: "l" },
+          { t: "Halt dein Maul", sev: "m" },
+          { t: "Niemand mag dich", sev: "m" },
+          { t: "Verpiss dich", sev: "m" },
+        ],
+      },
+      physical: {
+        label: "Körperliche Übergriffe",
+        color: "#d35400",
+        items: [
+          { t: "Schubsen", sev: "m" },
+          { t: "Am Rucksack ziehen", sev: "m" },
+          { t: "Treten oder Stoßen", sev: "m" },
+          { t: "Sachen verstecken", sev: "m" },
+          { t: "Schlagen", sev: "s" },
+          { t: "Spucken", sev: "s" },
+        ],
+      },
+      sexual: {
+        label: "Sexualisierte Sprache",
+        color: "#8e1a4a",
+        items: [
+          { t: "Obszöne Beleidigung", sev: "s" },
+          { t: "Anzügliche Geste", sev: "s" },
+          { t: "Körper kommentieren", sev: "m" },
+          { t: "Unangemessener Witz", sev: "m" },
+          { t: "Sexualisierte Beschimpfung", sev: "s" },
+        ],
+      },
+      gesture: {
+        label: "Gesten und nonverbale Abwertung",
+        color: "#6c3483",
+        items: [
+          { t: "Augen verdrehen", sev: "l" },
+          { t: "Zeigen und lachen", sev: "m" },
+          { t: "Nachmachen und verspotten", sev: "m" },
+          { t: "Einschüchternde Blicke", sev: "m" },
+          { t: "Abwertende Handgeste", sev: "s" },
+        ],
+      },
+      exclusion: {
+        label: "Ausgrenzung und Mobbing",
+        color: "#1a5276",
+        items: [
+          { t: "Nicht mitspielen lassen", sev: "m" },
+          { t: "Bewusst ausschließen", sev: "m" },
+          { t: "Ignorieren oder kalte Schulter", sev: "m" },
+          { t: "Gerüchte verbreiten", sev: "s" },
+          { t: "Gruppe gegen eine Person", sev: "s" },
+        ],
+      },
+      digital: {
+        label: "Digitales Fehlverhalten",
+        color: "#0e7490",
+        items: [
+          { t: "Online beleidigen", sev: "s" },
+          { t: "Screenshots weiterleiten", sev: "s" },
+          { t: "Peinliche Fotos teilen", sev: "s" },
+          { t: "Aus Chats ausschließen", sev: "m" },
+          { t: "Fake-Profil anlegen", sev: "s" },
+        ],
+      },
+    };
+
+    const SEVERITY_META = {
+      l: {
+        label: "Leicht",
+        icon: "🟡",
+        reactionTitle: "Leichte Grenzverletzung",
+        steps: [
+          { t: "Sofort", x: "Kurz und ruhig stoppen: klar benennen, dass die Äußerung oder Handlung nicht in Ordnung war." },
+          { t: "Zeitnah", x: "Ein kurzes Gespräch führen: Was war verletzend, was wäre stattdessen respektvoll gewesen?" },
+          { t: "Weiter beobachten", x: "Prüfen, ob es ein Einzelfall bleibt oder sich ein Muster entwickelt." },
+        ],
+        note: "Leichte Vorfälle können sich bei Wiederholung schnell zu mittleren oder schweren Belastungen entwickeln.",
+        why: "Auch scheinbar kleine Abwertungen verletzen das Zugehörigkeitsgefühl und schwächen das Sicherheitsgefühl in der Gruppe.",
+        feels: ["😔 verletzt", "😶 verunsichert", "😠 geärgert", "💭 nachdenklich"],
+      },
+      m: {
+        label: "Mittel",
+        icon: "🟠",
+        reactionTitle: "Mittlere Belastung",
+        steps: [
+          { t: "Sofort", x: "Klares Stopp-Signal setzen und Beteiligte wenn nötig räumlich trennen." },
+          { t: "Noch heute", x: "Mit den Beteiligten einzeln sprechen und die Wirkung auf das betroffene Kind klären." },
+          { t: "Nachhalten", x: "Beobachten, dokumentieren und bei Wiederholung eine verbindliche Konsequenz setzen." },
+        ],
+        note: "Mittlere Vorfälle umfassen deutliche Herabsetzungen, Ausgrenzungen oder körperliche Übergriffigkeit ohne massive Eskalation.",
+        why: "Wiederholte Abwertung, soziale Ausgrenzung und körperliche Übergriffe wirken oft lange nach und verändern das Klassenklima deutlich.",
+        feels: ["😢 traurig", "😠 wütend", "🫣 beschämt", "😟 unsicher"],
+      },
+      s: {
+        label: "Schwer",
+        icon: "🔴",
+        reactionTitle: "Schwere Belastung",
+        steps: [
+          { t: "Sofort", x: "Situation stoppen, Sicherheit herstellen und betroffene Kinder schützen." },
+          { t: "Kurzfristig", x: "Schulleitung informieren und den Vorfall schriftlich sichern." },
+          { t: "Weiteres Vorgehen", x: "Elternkontakt, Unterstützungsangebote und Schutzmaßnahmen verbindlich absprechen." },
+        ],
+        note: "Schwere Vorfälle betreffen sexualisierte, systematische, digitale oder massiv einschüchternde Grenzverletzungen.",
+        why: "Schwere Vorfälle können Angst, Ohnmacht und langfristige psychische Belastung auslösen und brauchen klare Schutzschritte.",
+        feels: ["😨 ängstlich", "💔 verletzt", "😢 ausgeliefert", "🫣 bedroht"],
+      },
+    };
+
+    const IMPACT_OVERRIDES = {
+      "Körper kommentieren": {
+        why: "Ungefragte Kommentare über den Körper greifen Würde, Schamgrenzen und Selbstwert direkt an.",
+        feels: ["😳 beschämt", "😔 unsicher", "😠 verletzt", "🫣 bloßgestellt"],
+      },
+      "Gruppe gegen eine Person": {
+        why: "Wenn mehrere gemeinsam gegen eine Person vorgehen, entsteht schnell ein massives Machtungleichgewicht.",
+        feels: ["💔 allein", "😨 ausgeliefert", "😢 hoffnungslos", "😟 eingeschüchtert"],
+      },
+      "Peinliche Fotos teilen": {
+        why: "Digitale Bloßstellung verbreitet sich schnell, ist oft nicht rückholbar und kann sehr nachhaltig verletzen.",
+        feels: ["😳 zutiefst beschämt", "😨 verfolgt", "😢 ausgeliefert", "💔 verzweifelt"],
+      },
+      "Schlagen": {
+        why: "Körperliche Gewalt ist nie harmlos. Sie verletzt körperlich und psychisch und erfordert sofortige Schutzschritte.",
+        feels: ["😨 bedroht", "😢 verletzt", "😠 wütend", "🫣 hilflos"],
+      },
+    };
+
+    const state = {
+      role: null,
+      currentView: "entry",
+      accessToken: null,
+      teacher: null,
+      teacherGroups: [],
+      student: null,
+      activeGroup: null,
+      currentSession: null,
+      entries: [],
+      selectedCategory: "verbal",
+      selectedItem: null,
+      selectedSeverity: null,
+      editingEntryId: null,
+      selectedImpactItem: null,
+      studentIdFallback: localStorage.getItem(STORAGE_STUDENT_ID) || "",
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    function showMessage(el, ok, text) {
+      el.innerHTML = `<div class="msg ${ok ? "ok" : "bad"}">${text}</div>`;
+    }
+
+    async function getTokenOrNull() {
+      if (state.accessToken) return state.accessToken;
+      const { data } = await supabase.auth.getSession();
+      const session = data.session || null;
+      state.accessToken = session?.access_token || null;
+      return state.accessToken;
+    }
+
+    async function apiJson(url, token, body) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body || {}),
+      });
+      const text = await response.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch {}
+      if (!response.ok) {
+        throw new Error((json && (json.error || json.message || json.details)) || text || `HTTP ${response.status}`);
+      }
+      return json || {};
+    }
+
+    function todayIso() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function severityLabel(severity) {
+      return SEVERITY_META[severity]?.label || "—";
+    }
+
+    function severityIcon(severity) {
+      return SEVERITY_META[severity]?.icon || "•";
+    }
+
+    function findCategoryItem(itemText) {
+      for (const [categoryKey, category] of Object.entries(CATEGORIES)) {
+        const item = category.items.find((entry) => entry.t === itemText);
+        if (item) return { categoryKey, category, item };
+      }
+      return null;
+    }
+
+    function currentItemRecord() {
+      if (!state.selectedItem) return null;
+      return CATEGORIES[state.selectedCategory].items.find((item) => item.t === state.selectedItem) || null;
+    }
+
+    function syncTabs() {
+      $("tabEntry").textContent = state.role === "teacher" ? "Lehrkraft" : "Schüleransicht";
+      $("tabEntry").classList.toggle("active", state.currentView === "entry");
+      $("tabClass").classList.toggle("active", state.currentView === "class");
+      $("viewEntry").classList.toggle("active", state.currentView === "entry");
+      $("viewClass").classList.toggle("active", state.currentView === "class");
+      $("modeToggle").classList.toggle("active", !!state.role);
+      if (state.currentView === "class") renderClassView();
+    }
+
+    function setView(view) {
+      state.currentView = view;
+      syncTabs();
+    }
+
+    function updateHeader() {
+      $("hdrMeta").classList.toggle("active", !!state.role);
+      $("hdrStats").classList.toggle("active", !!state.role);
+      $("logoutBtn").classList.toggle("active", !!state.role);
+      $("rolePill").textContent = `Rolle: ${state.role === "teacher" ? "Lehrkraft" : state.role === "student" ? "Schüler" : "—"}`;
+
+      if (state.role === "teacher") {
+        const groupName = state.activeGroup?.name || "keine Gruppe gewählt";
+        const protocolDate = $("dateInput").value || todayIso();
+        $("contextPill").textContent = `Gruppe: ${groupName} · ${protocolDate}`;
+        $("statusTitle").textContent = state.teacher?.display_name || "Lehrkraft";
+        $("statusSub").textContent = state.currentSession
+          ? `Tagesprotokoll ${state.currentSession.status === "active" ? "aktiv" : "geschlossen"} für ${state.activeGroup?.name || "—"} am ${state.currentSession.protocol_date}.`
+          : "Wähle eine Gruppe und ein Datum, starte ein Tagesprotokoll und bearbeite die Einträge deiner Klasse.";
+      } else if (state.role === "student") {
+        $("contextPill").textContent = `Klasse: ${state.student?.class_name || "—"}`;
+        $("statusTitle").textContent = state.student?.display_name || "Schülerzugang";
+        $("statusSub").textContent = state.currentSession
+          ? `Für ${state.activeGroup?.name || state.student?.class_name || "deine Klasse"} ist gerade ein Tagesprotokoll geöffnet. Du kannst anonym bis zu 10 Einträge hinzufügen.`
+          : "Zurzeit ist für deine Klasse kein offenes Tagesprotokoll aktiv.";
+      } else {
+        $("contextPill").textContent = "Kontext: —";
+      }
+
+      const entries = state.entries || [];
+      $("statAll").textContent = String(entries.length);
+      $("statLight").textContent = String(entries.filter((entry) => entry.severity === "l").length);
+      $("statMedium").textContent = String(entries.filter((entry) => entry.severity === "m").length);
+      $("statSevere").textContent = String(entries.filter((entry) => entry.severity === "s").length);
+    }
+
+    function renderCategories() {
+      $("catRow").innerHTML = Object.entries(CATEGORIES).map(([key, category]) => `
+        <button type="button" class="catChip ${state.selectedCategory === key ? "on" : ""}" data-cat="${key}" style="color:${category.color};border-color:${state.selectedCategory === key ? category.color : "var(--rule)"};">
+          ${escapeHtml(category.label)}
+        </button>
+      `).join("");
+
+      document.querySelectorAll(".catChip").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.selectedCategory = button.dataset.cat;
+          state.selectedItem = null;
+          state.selectedSeverity = null;
+          state.editingEntryId = null;
+          renderCategories();
+          renderItems();
+          renderSeverityButtons();
+          renderReaction();
+          renderFormInfo();
+        });
+      });
+    }
+
+    function renderItems() {
+      const category = CATEGORIES[state.selectedCategory];
+      $("itemList").innerHTML = category.items.map((item) => `
+        <button type="button" class="itemBtn ${state.selectedItem === item.t ? "on" : ""}" data-item="${escapeHtml(item.t)}">
+          <span class="itemPip" style="background:${category.color};"></span>
+          <span>${escapeHtml(item.t)}</span>
+          <span class="itemSev">${severityIcon(item.sev)} ${severityLabel(item.sev)}</span>
+        </button>
+      `).join("");
+
+      document.querySelectorAll(".itemBtn").forEach((button) => {
+        button.addEventListener("click", () => {
+          const record = CATEGORIES[state.selectedCategory].items.find((item) => item.t === button.dataset.item);
+          state.selectedItem = record?.t || button.dataset.item || null;
+          state.selectedSeverity = record?.sev || null;
+          state.editingEntryId = null;
+          renderItems();
+          renderSeverityButtons();
+          renderReaction();
+          renderFormInfo();
+        });
+      });
+    }
+
+    function renderSeverityButtons() {
+      ["l", "m", "s"].forEach((severity) => {
+        $("sev" + (severity === "l" ? "Light" : severity === "m" ? "Medium" : "Severe")).classList.toggle("on", state.selectedSeverity === severity);
+      });
+    }
+
+    function renderReaction() {
+      const card = $("reactionCard");
+      const head = card.querySelector(".reactionHead");
+      const stepsBox = card.querySelector(".reactionSteps");
+      const note = card.querySelector(".reactionNote");
+
+      if (!state.selectedItem || !state.selectedSeverity) {
+        head.style.display = "none";
+        stepsBox.innerHTML = "";
+        note.textContent = "Wähle zuerst einen Vorfall.";
+        return;
+      }
+
+      const meta = SEVERITY_META[state.selectedSeverity];
+      head.style.display = "block";
+      head.className = `reactionHead ${state.selectedSeverity}`;
+      head.textContent = `${meta.icon} ${meta.reactionTitle} · ${state.selectedItem}`;
+      stepsBox.innerHTML = meta.steps.map((step, index) => `
+        <div class="reactionStep">
+          <div class="reactionBadge ${state.selectedSeverity}">${index + 1}</div>
+          <div><strong>${escapeHtml(step.t)}:</strong> ${escapeHtml(step.x)}</div>
+        </div>
+      `).join("");
+      note.textContent = meta.note;
+    }
+
+    function currentSessionCanWrite() {
+      return !!state.currentSession && state.currentSession.status === "active";
+    }
+
+    function renderFormInfo() {
+      let text = "Wähle einen Vorfall aus, passe bei Bedarf die Schwere an und ergänze eine Notiz.";
+
+      if (state.role === "teacher") {
+        if (!state.currentSession) {
+          text = "Starte zuerst für die gewählte Gruppe und das Datum ein Tagesprotokoll.";
+        } else if (state.currentSession.status !== "active") {
+          text = "Dieses Tagesprotokoll ist bereits geschlossen. Du kannst Einträge noch bearbeiten oder löschen, aber keine neuen mehr hinzufügen.";
+        } else if (state.editingEntryId) {
+          text = "Du bearbeitest gerade einen vorhandenen Eintrag. Änderungen wirken direkt im Tagesprotokoll.";
+        } else {
+          text = "Dieses Tagesprotokoll ist offen. Neue Einträge werden ohne Personenzuordnung gespeichert.";
+        }
+      } else if (state.role === "student") {
+        if (!state.currentSession) {
+          text = "Für deine Klasse ist gerade kein offenes Tagesprotokoll aktiv.";
+        } else {
+          const remaining = Number(state.student?.entries_remaining ?? 0);
+          text = `Du kannst anonym bis zu 10 Einträge pro offenem Tagesprotokoll erfassen. Verbleibend: ${remaining}.`;
+        }
+      }
+
+      $("formInfo").textContent = text;
+      $("saveEntryBtn").disabled = !state.selectedItem || !state.selectedSeverity || !currentSessionCanWrite() || (state.role === "student" && Number(state.student?.entries_remaining ?? 0) <= 0);
+      $("cancelEditBtn").style.display = state.role === "teacher" && state.editingEntryId ? "inline-flex" : "none";
+      $("saveEntryBtn").textContent = state.role === "teacher" && state.editingEntryId ? "Eintrag speichern" : "Zum Tagesprotokoll hinzufügen";
+    }
+
+    function renderTeacherControls() {
+      $("teacherControls").classList.toggle("active", state.role === "teacher");
+      $("studentSummary").classList.remove("active");
+      if (state.role !== "teacher") return;
+
+      $("teacherSessionMsg").innerHTML = state.currentSession
+        ? `<strong>${state.currentSession.status === "active" ? "Offenes" : "Geschlossenes"} Tagesprotokoll:</strong> ${escapeHtml(state.activeGroup?.name || "—")} am ${escapeHtml(state.currentSession.protocol_date)} · ${state.entries.length} Einträge`
+        : "Für die aktuelle Auswahl gibt es noch kein Tagesprotokoll.";
+      $("closeSessionBtn").disabled = !state.currentSession || state.currentSession.status !== "active";
+    }
+
+    function renderStudentSummary() {
+      $("studentSummary").classList.toggle("active", state.role === "student");
+      $("teacherControls").classList.remove("active");
+      if (state.role !== "student") return;
+
+      if (!state.currentSession) {
+        $("studentSessionMsg").innerHTML = "Für deine Klasse ist aktuell kein offenes Tagesprotokoll aktiv.";
+        return;
+      }
+
+      $("studentSessionMsg").innerHTML = `
+        <strong>Offenes Tagesprotokoll:</strong> ${escapeHtml(state.activeGroup?.name || state.student?.class_name || "—")} am ${escapeHtml(state.currentSession.protocol_date)}<br>
+        Bereits genutzt: <strong>${Number(state.student?.entries_used || 0)}</strong> von 10 Einträgen ·
+        Verbleibend: <strong>${Number(state.student?.entries_remaining || 0)}</strong>
+      `;
+    }
+
+    function renderEntryList() {
+      const list = $("entryList");
+
+      if (state.role === "student") {
+        if (!state.currentSession) {
+          list.innerHTML = `<div class="entryEmpty">Sobald die Lehrkraft ein Tagesprotokoll für deine Klasse startet, kannst du hier anonym Einträge erfassen.</div>`;
+          return;
+        }
+        list.innerHTML = `<div class="entryEmpty">Die Schüleransicht dient zum anonymen Erfassen neuer Vorfälle. Die Klassenansicht zeigt dir die Wortwolke des aktuell offenen Tagesprotokolls.</div>`;
+        return;
+      }
+
+      if (!state.entries.length) {
+        list.innerHTML = `<div class="entryEmpty">Noch keine Einträge für diese Auswahl vorhanden.</div>`;
+        return;
+      }
+
+      list.innerHTML = state.entries.map((entry) => `
+        <div class="entryCard">
+          <div class="entryHead">
+            <span class="entrySev ${entry.severity}">${severityLabel(entry.severity)}</span>
+            <span class="entryItem">${escapeHtml(entry.item_text)}</span>
+            <span class="entryTime">${new Date(entry.created_at).toLocaleString("de-AT")}</span>
+          </div>
+          <div class="entryBody">
+            <div>
+              <div class="entryMeta">${escapeHtml(entry.category_label)}</div>
+              ${entry.note ? `<div class="entryNote">${escapeHtml(entry.note)}</div>` : ""}
+            </div>
+            <div class="entryActions">
+              <button class="ghost" type="button" data-edit="${entry.id}">Bearbeiten</button>
+              <button class="danger" type="button" data-delete="${entry.id}">Löschen</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      list.querySelectorAll("[data-edit]").forEach((button) => {
+        button.addEventListener("click", () => startEditEntry(button.dataset.edit));
+      });
+      list.querySelectorAll("[data-delete]").forEach((button) => {
+        button.addEventListener("click", () => deleteTeacherEntry(button.dataset.delete));
+      });
+    }
+
+    function renderClassView() {
+      const cloud = $("wordCloud");
+      const panel = $("impactPanel");
+      const entries = state.entries || [];
+
+      if (!entries.length) {
+        cloud.innerHTML = `<div class="entryEmpty" style="width:min(560px,100%);">Für die aktuelle Auswahl gibt es noch keine erfassten Vorfälle.</div>`;
+        panel.innerHTML = `<div class="impactEmpty">Sobald Einträge vorhanden sind, entsteht hier eine Wortwolke aus den tatsächlich erfassten Vorfällen.</div>`;
+        return;
+      }
+
+      const grouped = new Map();
+      entries.forEach((entry) => {
+        const key = entry.item_text;
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            text: entry.item_text,
+            categoryLabel: entry.category_label,
+            severity: entry.severity,
+            count: 0,
+          });
+        }
+        grouped.get(key).count += 1;
+      });
+
+      const words = Array.from(grouped.values()).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, "de"));
+      const maxCount = Math.max(...words.map((word) => word.count), 1);
+      cloud.innerHTML = words.map((word) => {
+        const base = word.severity === "l" ? 14 : word.severity === "m" ? 16 : 18;
+        const boost = Math.round((word.count / maxCount) * 14);
+        const active = state.selectedImpactItem === word.text;
+        return `<span class="wordTag ${word.severity} seen ${active ? "active" : ""}" data-word="${escapeHtml(word.text)}" style="font-size:${base + boost}px;opacity:${Math.min(.52 + word.count / maxCount * .48, 1)};">${escapeHtml(word.text)}</span>`;
+      }).join("");
+
+      cloud.querySelectorAll(".wordTag").forEach((tag) => {
+        tag.addEventListener("click", () => showImpact(tag.dataset.word));
+      });
+
+      if (!state.selectedImpactItem || !grouped.has(state.selectedImpactItem)) {
+        state.selectedImpactItem = words[0]?.text || null;
+      }
+      showImpact(state.selectedImpactItem);
+    }
+
+    function showImpact(itemText) {
+      const entries = state.entries.filter((entry) => entry.item_text === itemText);
+      if (!entries.length) return;
+      state.selectedImpactItem = itemText;
+
+      document.querySelectorAll(".wordTag").forEach((tag) => {
+        tag.classList.toggle("active", tag.dataset.word === itemText);
+      });
+
+      const severity = entries[0].severity;
+      const meta = SEVERITY_META[severity];
+      const override = IMPACT_OVERRIDES[itemText] || {};
+      const count = entries.length;
+      const categoryLabel = entries[0].category_label;
+      const feels = override.feels || meta.feels;
+      const why = override.why || meta.why;
+
+      $("impactPanel").innerHTML = `
+        <div class="impactCard">
+          <div class="impactBadge ${severity}">${meta.icon} ${meta.label}</div>
+          <div class="impactWord">${escapeHtml(itemText)}</div>
+          <div class="impactCat">${escapeHtml(categoryLabel)}</div>
+
+          <div class="impactCount">
+            <strong class="${severity}">${count}</strong>
+            <div>So oft wurde dieser Vorfall im aktuell geladenen Tagesprotokoll erfasst.</div>
+          </div>
+
+          <div class="impactSection">
+            <div class="impactHead">Warum ist das verletzend?</div>
+            <div class="impactBody">${escapeHtml(why)}</div>
+          </div>
+
+          <div class="impactSection">
+            <div class="impactHead">So kann sich ein betroffenes Kind fühlen</div>
+            <div class="feelGrid">${feels.map((feel) => `<div class="feelChip">${escapeHtml(feel)}</div>`).join("")}</div>
+          </div>
+
+          <div class="impactSection">
+            <div class="impactHead">Pädagogische Hinweise</div>
+            <div class="impactBody">${escapeHtml(meta.note)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function startEditEntry(entryId) {
+      const entry = state.entries.find((item) => item.id === entryId);
+      if (!entry) return;
+      const fallback = CATEGORIES[entry.category_key] ? null : findCategoryItem(entry.item_text);
+
+      state.editingEntryId = entry.id;
+      state.selectedCategory = CATEGORIES[entry.category_key] ? entry.category_key : (fallback?.categoryKey || state.selectedCategory);
+      state.selectedItem = entry.item_text;
+      state.selectedSeverity = entry.severity;
+      $("noteInput").value = entry.note || "";
+
+      renderCategories();
+      renderItems();
+      renderSeverityButtons();
+      renderReaction();
+      renderFormInfo();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetForm() {
+      state.editingEntryId = null;
+      state.selectedItem = null;
+      state.selectedSeverity = null;
+      $("noteInput").value = "";
+      renderCategories();
+      renderItems();
+      renderSeverityButtons();
+      renderReaction();
+      renderFormInfo();
+      $("formMsg").innerHTML = "";
+    }
+
+    async function deleteTeacherEntry(entryId) {
+      if (!confirm("Diesen Eintrag wirklich löschen?")) return;
+      const token = await getTokenOrNull();
+      if (!token) return;
+
+      try {
+        await apiJson(FN_TEACHER_UPDATE, token, {
+          action: "delete",
+          entry_id: entryId,
+          teacher_id: state.teacher?.id || null,
+        });
+        await loadTeacherSession();
+      } catch (error) {
+        showMessage($("formMsg"), false, `Löschen fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
+      }
+    }
+
+    async function loadTeacherProfileAndGroups() {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("Kein Login gefunden.");
+
+      const { data: teacher, error: teacherErr } = await supabase
+        .from("teachers")
+        .select("id,display_name,school_id,role")
+        .eq("user_id", userId)
+        .single();
+
+      if (teacherErr || !teacher) throw new Error("Kein Lehrerprofil gefunden.");
+      state.teacher = teacher;
+
+      const { data: groups, error: groupsErr } = await supabase
+        .from("teacher_groups")
+        .select("id,name")
+        .eq("teacher_id", teacher.id)
+        .order("name", { ascending: true });
+
+      if (groupsErr) throw new Error(groupsErr.message);
+      state.teacherGroups = groups || [];
+
+      $("groupSelect").innerHTML = state.teacherGroups.length
+        ? state.teacherGroups.map((group) => `<option value="${group.id}">${escapeHtml(group.name)}</option>`).join("")
+        : `<option value="">(keine Gruppen)</option>`;
+
+      if (!$("dateInput").value) $("dateInput").value = todayIso();
+      state.activeGroup = state.teacherGroups[0] || null;
+    }
+
+    async function loadTeacherSession() {
+      if (!state.teacher) return;
+      const groupId = $("groupSelect").value;
+      const protocolDate = $("dateInput").value || todayIso();
+      const selectedGroup = state.teacherGroups.find((group) => group.id === groupId) || null;
+      state.activeGroup = selectedGroup;
+
+      if (!groupId) {
+        state.currentSession = null;
+        state.entries = [];
+        updateHeader();
+        renderTeacherControls();
+        renderEntryList();
+        renderClassView();
+        renderFormInfo();
+        return;
+      }
+
+      const token = await getTokenOrNull();
+      const payload = await apiJson(FN_TEACHER_STATUS, token, {
+        group_id: groupId,
+        protocol_date: protocolDate,
+        teacher_id: state.teacher.id,
+      });
+
+      state.currentSession = payload.session || null;
+      state.entries = payload.entries || [];
+      state.selectedImpactItem = state.entries[0]?.item_text || null;
+      updateHeader();
+      renderTeacherControls();
+      renderEntryList();
+      renderClassView();
+      renderFormInfo();
+    }
+
+    async function loadStudentSession() {
+      const token = await getTokenOrNull();
+      if (!token) return;
+
+      const payload = await apiJson(FN_STUDENT_STATUS, token, {
+        student_id: state.studentIdFallback || null,
+      });
+
+      state.student = {
+        id: payload.student?.id,
+        display_name: payload.student?.display_name,
+        class_name: payload.student?.class_name,
+        entries_used: payload.entries_used || 0,
+        entries_remaining: payload.entries_remaining || 0,
+      };
+      state.studentIdFallback = payload.student?.id || state.studentIdFallback || "";
+      if (state.studentIdFallback) localStorage.setItem(STORAGE_STUDENT_ID, state.studentIdFallback);
+      state.activeGroup = payload.group || null;
+      state.currentSession = payload.session || null;
+      state.entries = payload.entries || [];
+      state.selectedImpactItem = state.entries[0]?.item_text || null;
+
+      updateHeader();
+      renderStudentSummary();
+      renderEntryList();
+      renderClassView();
+      renderFormInfo();
+    }
+
+    async function startTeacherSession() {
+      const token = await getTokenOrNull();
+      if (!token || !state.teacher) return;
+
+      try {
+        const payload = await apiJson(FN_TEACHER_START, token, {
+          group_id: $("groupSelect").value,
+          protocol_date: $("dateInput").value || todayIso(),
+          teacher_id: state.teacher.id,
+        });
+        state.currentSession = payload.session;
+        showMessage($("formMsg"), true, "Tagesprotokoll wurde gestartet.");
+        await loadTeacherSession();
+      } catch (error) {
+        showMessage($("formMsg"), false, `Start fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
+      }
+    }
+
+    async function closeTeacherSession() {
+      if (!state.currentSession || !confirm("Das Tagesprotokoll wirklich schließen? Danach können keine Schüler mehr hinzufügen.")) return;
+      const token = await getTokenOrNull();
+      if (!token || !state.teacher) return;
+
+      try {
+        await apiJson(FN_TEACHER_CLOSE, token, {
+          session_id: state.currentSession.id,
+          teacher_id: state.teacher.id,
+        });
+        showMessage($("formMsg"), true, "Tagesprotokoll wurde geschlossen.");
+        await loadTeacherSession();
+      } catch (error) {
+        showMessage($("formMsg"), false, `Schließen fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
+      }
+    }
+
+    async function saveEntry() {
+      if (!state.selectedItem || !state.selectedSeverity) return;
+      const note = $("noteInput").value.trim();
+
+      try {
+        if (state.role === "teacher") {
+          if (!state.currentSession) {
+            showMessage($("formMsg"), false, "Bitte zuerst ein Tagesprotokoll starten.");
+            return;
+          }
+          const token = await getTokenOrNull();
+          if (!token) return;
+
+          if (state.editingEntryId) {
+            await apiJson(FN_TEACHER_UPDATE, token, {
+              action: "update",
+              entry_id: state.editingEntryId,
+              severity: state.selectedSeverity,
+              note,
+              teacher_id: state.teacher?.id || null,
+            });
+            showMessage($("formMsg"), true, "Eintrag wurde aktualisiert.");
+          } else {
+            await apiJson(FN_TEACHER_UPDATE, token, {
+              action: "create",
+              session_id: state.currentSession.id,
+              severity: state.selectedSeverity,
+              category_key: state.selectedCategory,
+              category_label: CATEGORIES[state.selectedCategory].label,
+              item_text: state.selectedItem,
+              note,
+              teacher_id: state.teacher?.id || null,
+            });
+            showMessage($("formMsg"), true, "Eintrag wurde ergänzt.");
+          }
+
+          resetForm();
+          await loadTeacherSession();
+          return;
+        }
+
+        if (state.role === "student") {
+          if (!state.currentSession) {
+            showMessage($("formMsg"), false, "Für deine Klasse ist gerade kein offenes Tagesprotokoll aktiv.");
+            return;
+          }
+          const token = await getTokenOrNull();
+          if (!token) return;
+
+          await apiJson(FN_STUDENT_ADD, token, {
+            session_id: state.currentSession.id,
+            severity: state.selectedSeverity,
+            category_key: state.selectedCategory,
+            category_label: CATEGORIES[state.selectedCategory].label,
+            item_text: state.selectedItem,
+            note,
+            student_id: state.studentIdFallback || null,
+          });
+          showMessage($("formMsg"), true, "Danke. Dein Eintrag wurde anonym gespeichert.");
+          resetForm();
+          await loadStudentSession();
+        }
+      } catch (error) {
+        showMessage($("formMsg"), false, `Speichern fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
+      }
+    }
+
+    async function loginTeacher() {
+      const email = $("teacherEmail").value.trim();
+      const password = $("teacherPassword").value;
+      if (!email || !password) return showMessage($("teacherLoginMsg"), false, "Bitte E-Mail und Passwort eingeben.");
+
+      $("teacherLoginBtn").disabled = true;
+      try {
+        const { data: loginData, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        state.accessToken = loginData.session?.access_token || null;
+        if (!state.accessToken) throw new Error("Kein Login-Token erhalten.");
+        state.role = "teacher";
+        state.currentView = "entry";
+        $("loginScreen").style.display = "none";
+        $("app").style.display = "block";
+        await loadTeacherProfileAndGroups();
+        await loadTeacherSession();
+        renderCategories();
+        renderItems();
+        renderSeverityButtons();
+        renderReaction();
+        renderTeacherControls();
+        renderFormInfo();
+        renderEntryList();
+        syncTabs();
+        updateHeader();
+      } catch (error) {
+        showMessage($("teacherLoginMsg"), false, `Login fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
+      } finally {
+        $("teacherLoginBtn").disabled = false;
+      }
+    }
+
+    async function loginStudent() {
+      const code = $("studentCode").value.trim().toUpperCase();
+      if (!code) return showMessage($("studentLoginMsg"), false, "Bitte den Schülercode eingeben.");
+
+      $("studentLoginBtn").disabled = true;
+      try {
+        const loginPayload = await apiJson(FN_STUDENT_LOGIN, null, { code });
+        const email = loginPayload.email;
+        if (!email || !loginPayload.student?.id) throw new Error("Loginantwort unvollständig.");
+
+        state.studentIdFallback = loginPayload.student.id;
+        localStorage.setItem(STORAGE_STUDENT_ID, state.studentIdFallback);
+
+        const { data: loginData, error } = await supabase.auth.signInWithPassword({ email, password: code });
+        if (error) throw error;
+        state.accessToken = loginData.session?.access_token || null;
+        if (!state.accessToken) throw new Error("Kein Login-Token erhalten.");
+
+        state.role = "student";
+        state.currentView = "entry";
+        $("loginScreen").style.display = "none";
+        $("app").style.display = "block";
+        await loadStudentSession();
+        renderCategories();
+        renderItems();
+        renderSeverityButtons();
+        renderReaction();
+        renderStudentSummary();
+        renderFormInfo();
+        renderEntryList();
+        syncTabs();
+        updateHeader();
+      } catch (error) {
+        showMessage($("studentLoginMsg"), false, `Login fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
+      } finally {
+        $("studentLoginBtn").disabled = false;
+      }
+    }
+
+    async function restoreSession() {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return;
+      state.accessToken = data.session.access_token || null;
+
+      const { data: teacher } = await supabase
+        .from("teachers")
+        .select("id")
+        .eq("user_id", data.session.user.id)
+        .maybeSingle();
+
+      if (teacher?.id) {
+        state.role = "teacher";
+        $("loginScreen").style.display = "none";
+        $("app").style.display = "block";
+        await loadTeacherProfileAndGroups();
+        await loadTeacherSession();
+        renderTeacherControls();
+      } else {
+        state.role = "student";
+        $("loginScreen").style.display = "none";
+        $("app").style.display = "block";
+        await loadStudentSession();
+        renderStudentSummary();
+      }
+
+      renderCategories();
+      renderItems();
+      renderSeverityButtons();
+      renderReaction();
+      renderFormInfo();
+      renderEntryList();
+      syncTabs();
+      updateHeader();
+    }
+
+    function isJwtError(error) {
+      const text = String(error?.message || error || "");
+      return text.includes("Invalid JWT") || text.includes("JWT") || text.includes("401");
+    }
+
+    async function refreshCurrentState() {
+      if (state.role === "teacher") {
+        await loadTeacherSession();
+        return;
+      }
+      if (state.role === "student") {
+        await loadStudentSession();
+      }
+    }
+
+    async function logoutCurrentUser() {
+      await supabase.auth.signOut();
+      state.role = null;
+      state.accessToken = null;
+      state.teacher = null;
+      state.student = null;
+      state.activeGroup = null;
+      state.currentSession = null;
+      state.entries = [];
+      state.editingEntryId = null;
+      $("loginScreen").style.display = "";
+      $("app").style.display = "none";
+      $("teacherLoginMsg").innerHTML = "";
+      $("studentLoginMsg").innerHTML = "";
+      $("teacherEmail").value = "";
+      $("teacherPassword").value = "";
+      $("studentCode").value = "";
+      syncTabs();
+      updateHeader();
+    }
+
+    $("tabEntry").addEventListener("click", () => setView("entry"));
+    $("tabClass").addEventListener("click", () => setView("class"));
+    $("studentLoginBtn").addEventListener("click", loginStudent);
+    $("teacherLoginBtn").addEventListener("click", loginTeacher);
+    $("studentCode").addEventListener("keydown", (event) => { if (event.key === "Enter") loginStudent(); });
+    $("teacherPassword").addEventListener("keydown", (event) => { if (event.key === "Enter") loginTeacher(); });
+    $("groupSelect").addEventListener("change", () => loadTeacherSession().catch((error) => showMessage($("formMsg"), false, escapeHtml(String(error.message || error)))));
+    $("dateInput").addEventListener("change", () => loadTeacherSession().catch((error) => showMessage($("formMsg"), false, escapeHtml(String(error.message || error)))));
+    $("startSessionBtn").addEventListener("click", startTeacherSession);
+    $("reloadSessionBtn").addEventListener("click", () => loadTeacherSession().catch((error) => showMessage($("formMsg"), false, escapeHtml(String(error.message || error)))));
+    $("refreshStateBtn").addEventListener("click", () => refreshCurrentState().catch((error) => showMessage($("formMsg"), false, escapeHtml(String(error.message || error)))));
+    $("closeSessionBtn").addEventListener("click", closeTeacherSession);
+    $("saveEntryBtn").addEventListener("click", saveEntry);
+    $("cancelEditBtn").addEventListener("click", resetForm);
+    $("sevLight").addEventListener("click", () => { state.selectedSeverity = "l"; renderSeverityButtons(); renderReaction(); renderFormInfo(); });
+    $("sevMedium").addEventListener("click", () => { state.selectedSeverity = "m"; renderSeverityButtons(); renderReaction(); renderFormInfo(); });
+    $("sevSevere").addEventListener("click", () => { state.selectedSeverity = "s"; renderSeverityButtons(); renderReaction(); renderFormInfo(); });
+    $("logoutBtn").addEventListener("click", logoutCurrentUser);
+    $("logoutInlineBtn").addEventListener("click", logoutCurrentUser);
+
+    $("dateInput").value = todayIso();
+    renderCategories();
+    renderItems();
+    renderSeverityButtons();
+    renderReaction();
+    renderFormInfo();
+    restoreSession().catch((error) => {
+      console.error(error);
+      if (isJwtError(error)) {
+        logoutCurrentUser().then(() => {
+          showMessage($("teacherLoginMsg"), false, "Deine Anmeldung war abgelaufen. Bitte melde dich neu an.");
+        });
+        return;
+      }
+      showMessage($("teacherLoginMsg"), false, `Session konnte nicht wiederhergestellt werden: ${escapeHtml(String(error.message || error))}`);
+    });
+  </script>
+</body>
+</html>

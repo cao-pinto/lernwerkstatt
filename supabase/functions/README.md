@@ -2,6 +2,12 @@
 
 ## Enthaltene Functions
 - `admin_create_manager`
+- `climate_student_add_entry`
+- `climate_student_status`
+- `climate_teacher_close_session`
+- `climate_teacher_session_status`
+- `climate_teacher_start_session`
+- `climate_teacher_update_entry`
 - `feedback_close_round`
 - `feedback_reset_round`
 - `feedback_start_round`
@@ -20,6 +26,7 @@
 ## Voraussetzungen
 - Migration ausführen: `db/lernwerkstatt_school_model.sql`
 - Fuer soziale Rueckmeldungen zusaetzlich: `db/social_feedback_feature.sql`
+- Fuer Klassenklima zusaetzlich: `db/class_climate_feature.sql`
 - In Supabase Secrets setzen:
   - `SUPABASE_URL`
   - `SUPABASE_SERVICE_ROLE_KEY`
@@ -31,6 +38,12 @@ Beispiel:
 ## Deploy
 ```bash
 supabase functions deploy admin_create_manager
+supabase functions deploy climate_student_add_entry
+supabase functions deploy climate_student_status
+supabase functions deploy climate_teacher_close_session
+supabase functions deploy climate_teacher_session_status
+supabase functions deploy climate_teacher_start_session
+supabase functions deploy climate_teacher_update_entry
 supabase functions deploy feedback_close_round
 supabase functions deploy feedback_reset_round
 supabase functions deploy feedback_start_round
