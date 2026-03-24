@@ -69,6 +69,33 @@ Deno.serve(async (req) => {
     if (sessionErr) return fail("Tagesprotokoll konnte nicht geladen werden", 400, sessionErr.message);
 
     if (!session) {
+      const { data: memberLinks, error: memberLinkErr } = await supabase
+        .from("teacher_group_students")
+        .select("student_id")
+        .eq("group_id", groupId);
+
+      if (memberLinkErr) return fail("Gruppenschüler konnten nicht geladen werden", 400, memberLinkErr.message);
+      const studentIds = (memberLinks || []).map((row) => String(row.student_id));
+      const { data: students, error: studentsErr } = studentIds.length
+        ? await supabase
+          .from("students")
+          .select("id,display_name,class_name")
+          .in("id", studentIds)
+          .order("display_name", { ascending: true })
+        : { data: [], error: null };
+
+      if (studentsErr) return fail("Schüler konnten nicht geladen werden", 400, studentsErr.message);
+
+      const { data: behaviorRows, error: behaviorErr } = studentIds.length
+        ? await supabase
+          .from("student_behavior_statuses")
+          .select("student_id,points,teacher_note,updated_at")
+          .in("student_id", studentIds)
+        : { data: [], error: null };
+
+      if (behaviorErr) return fail("Verhaltensstatus konnte nicht geladen werden", 400, behaviorErr.message);
+      const behaviorMap = new Map((behaviorRows || []).map((row) => [String(row.student_id), row]));
+
       return ok({
         teacher: {
           id: teacher.id,
@@ -81,6 +108,14 @@ Deno.serve(async (req) => {
         },
         session: null,
         entries: [],
+        behavior_statuses: (students || []).map((student) => ({
+          student_id: student.id,
+          display_name: student.display_name,
+          class_name: student.class_name,
+          points: Number(behaviorMap.get(String(student.id))?.points || 0),
+          teacher_note: behaviorMap.get(String(student.id))?.teacher_note || null,
+          updated_at: behaviorMap.get(String(student.id))?.updated_at || null,
+        })),
       });
     }
 
@@ -91,6 +126,33 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false });
 
     if (entriesErr) return fail("Einträge konnten nicht geladen werden", 400, entriesErr.message);
+
+    const { data: memberLinks, error: memberLinkErr } = await supabase
+      .from("teacher_group_students")
+      .select("student_id")
+      .eq("group_id", groupId);
+
+    if (memberLinkErr) return fail("Gruppenschüler konnten nicht geladen werden", 400, memberLinkErr.message);
+    const studentIds = (memberLinks || []).map((row) => String(row.student_id));
+    const { data: students, error: studentsErr } = studentIds.length
+      ? await supabase
+        .from("students")
+        .select("id,display_name,class_name")
+        .in("id", studentIds)
+        .order("display_name", { ascending: true })
+      : { data: [], error: null };
+
+    if (studentsErr) return fail("Schüler konnten nicht geladen werden", 400, studentsErr.message);
+
+    const { data: behaviorRows, error: behaviorErr } = studentIds.length
+      ? await supabase
+        .from("student_behavior_statuses")
+        .select("student_id,points,teacher_note,updated_at")
+        .in("student_id", studentIds)
+      : { data: [], error: null };
+
+    if (behaviorErr) return fail("Verhaltensstatus konnte nicht geladen werden", 400, behaviorErr.message);
+    const behaviorMap = new Map((behaviorRows || []).map((row) => [String(row.student_id), row]));
 
     return ok({
       teacher: {
@@ -104,6 +166,14 @@ Deno.serve(async (req) => {
       },
       session,
       entries: entries || [],
+      behavior_statuses: (students || []).map((student) => ({
+        student_id: student.id,
+        display_name: student.display_name,
+        class_name: student.class_name,
+        points: Number(behaviorMap.get(String(student.id))?.points || 0),
+        teacher_note: behaviorMap.get(String(student.id))?.teacher_note || null,
+        updated_at: behaviorMap.get(String(student.id))?.updated_at || null,
+      })),
     });
   } catch (error) {
     return fail("Interner Fehler", 500, String(error));

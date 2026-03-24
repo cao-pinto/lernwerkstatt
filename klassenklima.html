@@ -446,6 +446,101 @@
       flex-direction: column;
     }
     .teacherControls.active { display: flex; }
+    .behaviorPanel {
+      border: 1px solid var(--rule);
+      border-radius: 18px;
+      background: rgba(255,255,255,.76);
+      padding: 14px;
+    }
+    .behaviorPanelTitle {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: var(--ink-2);
+      margin-bottom: 10px;
+    }
+    .behaviorTeacherList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 310px;
+      overflow-y: auto;
+    }
+    .behaviorTeacherItem {
+      border: 1px solid var(--rule);
+      border-radius: 16px;
+      background: white;
+      padding: 10px 12px;
+    }
+    .behaviorTeacherHead {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .behaviorTeacherName {
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .behaviorTeacherMeta {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .behaviorActions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .behaviorActions button {
+      padding: 7px 10px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+    }
+    .behaviorBar {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .behaviorSeg {
+      height: 10px;
+      border-radius: 999px;
+      background: #e5edf9;
+    }
+    .behaviorSeg.on.green { background: #65a30d; }
+    .behaviorSeg.on.yellow { background: #facc15; }
+    .behaviorSeg.on.red { background: #ef4444; }
+    .behaviorStudentCard {
+      margin-top: 12px;
+      border: 1px solid var(--rule);
+      border-radius: 18px;
+      background: rgba(255,255,255,.76);
+      padding: 14px;
+    }
+    .behaviorStudentTop {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .behaviorBadge {
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 800;
+    }
+    .behaviorBadge.green { background: #ecfccb; color: #4d7c0f; }
+    .behaviorBadge.yellow { background: #fef3c7; color: #a16207; }
+    .behaviorBadge.red { background: #fee2e2; color: #b91c1c; }
+    .behaviorLegend {
+      margin-top: 10px;
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
     .controlGrid {
       display: grid;
       grid-template-columns: 1.2fr .8fr auto auto auto;
@@ -920,11 +1015,27 @@
                 </div>
               </div>
               <div id="teacherSessionMsg" class="muted">Bitte Gruppe und Datum wählen.</div>
+              <div class="behaviorPanel">
+                <div class="behaviorPanelTitle">Verhaltensampel der Gruppe</div>
+                <div class="muted" id="teacherBehaviorMsg">Wähle eine Gruppe, um die Statusanzeige zu laden.</div>
+                <div class="behaviorTeacherList" id="teacherBehaviorList"></div>
+              </div>
             </div>
 
             <div class="studentSummary" id="studentSummary">
               <div class="sectionHead"><span class="stepN">S</span>Aktuelle Sitzung</div>
               <div id="studentSessionMsg" class="muted">Für deine Klasse ist gerade kein offenes Tagesprotokoll aktiv.</div>
+              <div class="behaviorStudentCard">
+                <div class="behaviorStudentTop">
+                  <div>
+                    <strong>Dein Verhaltensstatus</strong>
+                    <div class="muted" id="studentBehaviorHint">Du siehst hier nur deinen eigenen Stand.</div>
+                  </div>
+                  <span class="behaviorBadge green" id="studentBehaviorBadge">Grüner Bereich</span>
+                </div>
+                <div class="behaviorBar" id="studentBehaviorBar"></div>
+                <div class="behaviorLegend" id="studentBehaviorLegend">0 von 12 Punkten</div>
+              </div>
             </div>
 
             <div class="entryList" id="entryList"></div>
@@ -966,6 +1077,7 @@
     const FN_TEACHER_START = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_start_session";
     const FN_TEACHER_CLOSE = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_close_session";
     const FN_TEACHER_UPDATE = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_update_entry";
+    const FN_TEACHER_UPDATE_BEHAVIOR = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_update_behavior";
     const FN_STUDENT_STATUS = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_student_status";
     const FN_STUDENT_ADD = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_student_add_entry";
 
@@ -1113,7 +1225,9 @@
       accessToken: null,
       teacher: null,
       teacherGroups: [],
+      teacherBehaviorMembers: [],
       student: null,
+      studentBehavior: { points: 0, teacher_note: null, updated_at: null },
       activeGroup: null,
       currentSession: null,
       entries: [],
@@ -1216,6 +1330,33 @@
 
     function severityIcon(severity) {
       return SEVERITY_META[severity]?.icon || "•";
+    }
+
+    function behaviorZone(points) {
+      if (points >= 9) return "red";
+      if (points >= 4) return "yellow";
+      return "green";
+    }
+
+    function behaviorZoneLabel(points) {
+      const zone = behaviorZone(points);
+      if (zone === "red") return "Roter Bereich";
+      if (zone === "yellow") return "Gelber Bereich";
+      return "Grüner Bereich";
+    }
+
+    function behaviorHint(points) {
+      if (points >= 9) return `Noch ${12 - points} Schritte bis zum Maximalwert. Bitte suche das Gespräch mit deiner Lehrkraft.`;
+      if (points >= 4) return `Noch ${9 - points} Schritte bis Rot. Du bist nahe an der nächsten Stufe.`;
+      return `Noch ${4 - points} Schritte bis Gelb. Du bist aktuell im grünen Bereich.`;
+    }
+
+    function renderBehaviorBar(points) {
+      return Array.from({ length: 12 }, (_, index) => {
+        const current = index + 1;
+        const zone = current >= 9 ? "red" : current >= 4 ? "yellow" : "green";
+        return `<span class="behaviorSeg ${current <= points ? `on ${zone}` : ""}"></span>`;
+      }).join("");
     }
 
     function findCategoryItem(itemText) {
@@ -1408,12 +1549,52 @@
       } else if (state.currentSession?.status === "closed") {
         startBtn.textContent = "Fortsetzen";
       }
+
+      const behaviorMembers = state.teacherBehaviorMembers || [];
+      $("teacherBehaviorMsg").textContent = behaviorMembers.length
+        ? "Die Lehrkraft kann den Punktestand jedes Kindes fein anpassen."
+        : "Für diese Gruppe sind noch keine Schüler vorhanden.";
+      $("teacherBehaviorList").innerHTML = behaviorMembers.map((member) => `
+        <div class="behaviorTeacherItem">
+          <div class="behaviorTeacherHead">
+            <div>
+              <div class="behaviorTeacherName">${escapeHtml(member.display_name || "—")}</div>
+              <div class="behaviorTeacherMeta">${escapeHtml(member.class_name || "")} · ${behaviorZoneLabel(member.points)} · ${member.points}/12</div>
+            </div>
+            <span class="behaviorBadge ${behaviorZone(member.points)}">${behaviorZoneLabel(member.points)}</span>
+          </div>
+          <div class="behaviorBar">${renderBehaviorBar(member.points)}</div>
+          <div class="behaviorActions">
+            <button class="ghost" type="button" data-behavior-set="${member.student_id}" data-points="${Math.max(0, member.points - 1)}">-1</button>
+            <button class="ghost" type="button" data-behavior-set="${member.student_id}" data-points="${Math.min(12, member.points + 1)}">+1</button>
+            <button class="ghost" type="button" data-behavior-set="${member.student_id}" data-points="0">Grün</button>
+            <button class="ghost" type="button" data-behavior-set="${member.student_id}" data-points="4">Gelb</button>
+            <button class="danger" type="button" data-behavior-set="${member.student_id}" data-points="9">Rot</button>
+          </div>
+        </div>
+      `).join("");
+
+      $("teacherBehaviorList").querySelectorAll("[data-behavior-set]").forEach((button) => {
+        button.addEventListener("click", () => {
+          updateBehaviorPoints(button.dataset.behaviorSet, Number(button.dataset.points || 0));
+        });
+      });
     }
 
     function renderStudentSummary() {
       $("studentSummary").classList.toggle("active", state.role === "student");
       $("teacherControls").classList.remove("active");
       if (state.role !== "student") return;
+
+      const points = Number(state.studentBehavior?.points || 0);
+      const zone = behaviorZone(points);
+      $("studentBehaviorBadge").className = `behaviorBadge ${zone}`;
+      $("studentBehaviorBadge").textContent = behaviorZoneLabel(points);
+      $("studentBehaviorBar").innerHTML = renderBehaviorBar(points);
+      $("studentBehaviorLegend").textContent = `${points} von 12 Punkten · ${behaviorHint(points)}`;
+      $("studentBehaviorHint").textContent = state.studentBehavior?.teacher_note
+        ? `Hinweis der Lehrkraft: ${state.studentBehavior.teacher_note}`
+        : "Du siehst hier nur deinen eigenen Stand.";
 
       if (!state.currentSession) {
         $("studentSessionMsg").innerHTML = "Für deine Klasse ist aktuell kein offenes Tagesprotokoll aktiv.";
@@ -1669,6 +1850,7 @@
       if (!groupId) {
         state.currentSession = null;
         state.entries = [];
+        state.teacherBehaviorMembers = [];
         updateHeader();
         renderTeacherControls();
         renderEntryList();
@@ -1686,6 +1868,10 @@
 
       state.currentSession = payload.session || null;
       state.entries = payload.entries || [];
+      state.teacherBehaviorMembers = (payload.behavior_statuses || []).map((member) => ({
+        ...member,
+        points: Number(member.points || 0),
+      }));
       state.selectedImpactItem = state.entries[0]?.item_text || null;
       updateHeader();
       renderTeacherControls();
@@ -1714,6 +1900,11 @@
       state.activeGroup = payload.group || null;
       state.currentSession = payload.session || null;
       state.entries = payload.entries || [];
+      state.studentBehavior = {
+        points: Number(payload.behavior_status?.points || 0),
+        teacher_note: payload.behavior_status?.teacher_note || null,
+        updated_at: payload.behavior_status?.updated_at || null,
+      };
       state.selectedImpactItem = state.entries[0]?.item_text || null;
 
       updateHeader();
@@ -1738,6 +1929,24 @@
         await loadTeacherSession();
       } catch (error) {
         showMessage($("formMsg"), false, `Start fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
+      }
+    }
+
+    async function updateBehaviorPoints(studentId, points) {
+      const token = await getTokenOrNull();
+      if (!token || !state.teacher || !state.activeGroup?.id || !studentId) return;
+
+      try {
+        await apiJson(FN_TEACHER_UPDATE_BEHAVIOR, token, {
+          group_id: state.activeGroup.id,
+          student_id: studentId,
+          points,
+          teacher_id: state.teacher.id,
+        });
+        flashMessage($("formMsg"), true, "Verhaltensstatus wurde aktualisiert.");
+        await loadTeacherSession();
+      } catch (error) {
+        showMessage($("formMsg"), false, `Status konnte nicht aktualisiert werden: ${escapeHtml(String(error.message || error))}`);
       }
     }
 
@@ -1960,7 +2169,9 @@
       state.role = null;
       state.accessToken = null;
       state.teacher = null;
+      state.teacherBehaviorMembers = [];
       state.student = null;
+      state.studentBehavior = { points: 0, teacher_note: null, updated_at: null };
       state.activeGroup = null;
       state.currentSession = null;
       state.entries = [];

@@ -73,6 +73,13 @@ Deno.serve(async (req) => {
     const group = await resolvePrimaryGroup(supabase, student.id, student.class_name || null);
 
     if (!group) {
+      const behavior = await supabase
+        .from("student_behavior_statuses")
+        .select("points,teacher_note,updated_at")
+        .eq("student_id", student.id)
+        .maybeSingle();
+
+      if (behavior.error) return fail("Verhaltensstatus konnte nicht geladen werden", 400, behavior.error.message);
       return ok({
         student,
         group: null,
@@ -80,6 +87,11 @@ Deno.serve(async (req) => {
         entries_remaining: 0,
         entries_used: 0,
         entries: [],
+        behavior_status: {
+          points: Number(behavior.data?.points || 0),
+          teacher_note: behavior.data?.teacher_note || null,
+          updated_at: behavior.data?.updated_at || null,
+        },
       });
     }
 
@@ -123,6 +135,13 @@ Deno.serve(async (req) => {
     if (entriesErr) return fail("Tagesprotokolleinträge konnten nicht geladen werden", 400, entriesErr.message);
 
     const used = Number(usage.data?.entry_count || 0);
+    const behavior = await supabase
+      .from("student_behavior_statuses")
+      .select("points,teacher_note,updated_at")
+      .eq("student_id", student.id)
+      .maybeSingle();
+
+    if (behavior.error) return fail("Verhaltensstatus konnte nicht geladen werden", 400, behavior.error.message);
 
     return ok({
       student: {
@@ -135,6 +154,11 @@ Deno.serve(async (req) => {
       entries_used: used,
       entries_remaining: Math.max(0, 10 - used),
       entries: entries || [],
+      behavior_status: {
+        points: Number(behavior.data?.points || 0),
+        teacher_note: behavior.data?.teacher_note || null,
+        updated_at: behavior.data?.updated_at || null,
+      },
     });
   } catch (error) {
     return fail("Interner Fehler", 500, String(error));
