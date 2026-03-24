@@ -67,12 +67,43 @@ Deno.serve(async (req) => {
 
     if (existingErr) return fail("Vorhandenes Tagesprotokoll konnte nicht geprüft werden", 400, existingErr.message);
     if (existing) {
-      return fail(
-        existing.status === "active"
-          ? "Für diese Klasse läuft bereits ein Tagesprotokoll"
-          : "Für diese Klasse existiert an diesem Tag bereits ein geschlossenes Tagesprotokoll",
-        409,
-      );
+      if (existing.status === "active") {
+        return ok({
+          session: {
+            id: existing.id,
+            protocol_date: protocolDate,
+            status: "active",
+          },
+          group: {
+            id: group.id,
+            name: group.name,
+          },
+        });
+      }
+
+      const reopened = await supabase
+        .from("class_climate_sessions")
+        .update({
+          status: "active",
+          closed_at: null,
+          started_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id)
+        .select("id,protocol_date,status,started_at,closed_at")
+        .single();
+
+      if (reopened.error || !reopened.data) {
+        return fail("Geschlossenes Tagesprotokoll konnte nicht fortgesetzt werden", 400, reopened.error?.message);
+      }
+
+      return ok({
+        session: reopened.data,
+        group: {
+          id: group.id,
+          name: group.name,
+        },
+      });
     }
 
     const { data: created, error: createErr } = await supabase

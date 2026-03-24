@@ -244,7 +244,7 @@
     .workspace {
       margin-top: 16px;
       display: grid;
-      grid-template-columns: 360px minmax(0, 1fr);
+      grid-template-columns: 430px minmax(0, 1fr);
       gap: 16px;
       min-height: 640px;
     }
@@ -293,9 +293,9 @@
       background: rgba(255,255,255,.78);
     }
     .catRow {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
-      flex-wrap: wrap;
       margin-bottom: 12px;
     }
     .catChip {
@@ -304,8 +304,9 @@
       background: white;
       padding: 7px 11px;
       cursor: pointer;
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       font-weight: 700;
+      text-align: center;
     }
     .catChip.on { box-shadow: 0 8px 18px rgba(16,32,58,.08); }
 
@@ -324,13 +325,16 @@
       border-radius: 14px;
       border: 1px solid var(--rule);
       background: white;
-      padding: 10px 11px;
+      padding: 8px 10px;
       text-align: left;
       color: var(--ink-2);
+      font-size: 0.74rem;
     }
     .itemBtn.on {
-      background: #eef6ff;
+      background: linear-gradient(90deg, rgba(31,111,235,.18), rgba(43,142,255,.3));
       font-weight: 700;
+      border-color: var(--accent);
+      box-shadow: 0 10px 24px rgba(31, 111, 235, 0.18);
     }
     .itemPip {
       width: 4px;
@@ -338,11 +342,22 @@
       border-radius: 999px;
       flex-shrink: 0;
     }
+    .itemBtn.on .itemPip {
+      width: 4px;
+      height: 20px;
+      box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.12);
+    }
+    .itemBtn.on span:nth-child(2) {
+      color: var(--ink);
+    }
     .itemSev {
       margin-left: auto;
-      font-size: 0.72rem;
+      font-size: 0.67rem;
       font-weight: 700;
       white-space: nowrap;
+    }
+    .itemBtn.on .itemSev {
+      color: var(--accent);
     }
 
     .sevGrid {
@@ -535,6 +550,29 @@
       gap: 8px;
       flex-wrap: wrap;
       justify-content: flex-end;
+    }
+    .studentOwnList {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .studentOwnItem {
+      border-radius: 16px;
+      border: 1px solid var(--rule);
+      background: rgba(255,255,255,.72);
+      padding: 11px 12px;
+    }
+    .studentOwnMeta {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    #startSessionBtn.running {
+      background: #16a34a;
+      color: white;
     }
     .entryActions button {
       padding: 8px 11px;
@@ -935,6 +973,7 @@
     const $ = (id) => document.getElementById(id);
 
     const STORAGE_STUDENT_ID = "lw_klassenklima_student_id";
+    const STUDENT_ENTRY_STORAGE_PREFIX = "lw_klassenklima_entries";
 
     const CATEGORIES = {
       verbal: {
@@ -1098,6 +1137,42 @@
 
     function showMessage(el, ok, text) {
       el.innerHTML = `<div class="msg ${ok ? "ok" : "bad"}">${text}</div>`;
+    }
+
+    function flashMessage(el, ok, text, timeout = 2400) {
+      showMessage(el, ok, text);
+      window.clearTimeout(flashMessage._timer);
+      flashMessage._timer = window.setTimeout(() => {
+        el.innerHTML = "";
+      }, timeout);
+    }
+
+    function currentStudentEntryStorageKey() {
+      if (!state.student?.id || !state.currentSession?.id) return null;
+      return `${STUDENT_ENTRY_STORAGE_PREFIX}_${state.student.id}_${state.currentSession.id}`;
+    }
+
+    function loadStudentOwnEntries() {
+      const key = currentStudentEntryStorageKey();
+      if (!key) return [];
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveStudentOwnEntries(entries) {
+      const key = currentStudentEntryStorageKey();
+      if (!key) return;
+      localStorage.setItem(key, JSON.stringify(entries));
+    }
+
+    function appendStudentOwnEntry(entry) {
+      const ownEntries = loadStudentOwnEntries();
+      ownEntries.unshift(entry);
+      saveStudentOwnEntries(ownEntries.slice(0, 10));
     }
 
     async function getTokenOrNull() {
@@ -1317,10 +1392,22 @@
       $("studentSummary").classList.remove("active");
       if (state.role !== "teacher") return;
 
+      const startBtn = $("startSessionBtn");
       $("teacherSessionMsg").innerHTML = state.currentSession
         ? `<strong>${state.currentSession.status === "active" ? "Offenes" : "Geschlossenes"} Tagesprotokoll:</strong> ${escapeHtml(state.activeGroup?.name || "—")} am ${escapeHtml(state.currentSession.protocol_date)} · ${state.entries.length} Einträge`
         : "Für die aktuelle Auswahl gibt es noch kein Tagesprotokoll.";
       $("closeSessionBtn").disabled = !state.currentSession || state.currentSession.status !== "active";
+      startBtn.classList.remove("running");
+      startBtn.disabled = false;
+      startBtn.textContent = "Starten";
+
+      if (state.currentSession?.status === "active") {
+        startBtn.classList.add("running");
+        startBtn.textContent = "Läuft";
+        startBtn.disabled = true;
+      } else if (state.currentSession?.status === "closed") {
+        startBtn.textContent = "Fortsetzen";
+      }
     }
 
     function renderStudentSummary() {
@@ -1348,7 +1435,24 @@
           list.innerHTML = `<div class="entryEmpty">Sobald die Lehrkraft ein Tagesprotokoll für deine Klasse startet, kannst du hier anonym Einträge erfassen.</div>`;
           return;
         }
-        list.innerHTML = `<div class="entryEmpty">Die Schüleransicht dient zum anonymen Erfassen neuer Vorfälle. Die Klassenansicht zeigt dir die Wortwolke des aktuell offenen Tagesprotokolls.</div>`;
+        const ownEntries = loadStudentOwnEntries();
+        list.innerHTML = `
+          <div class="entryEmpty">Die Schüleransicht dient zum anonymen Erfassen neuer Vorfälle. Die Klassenansicht zeigt dir die Wortwolke des aktuell offenen Tagesprotokolls.</div>
+          <div class="box" style="margin-top:4px;">
+            <div class="sectionHead"><span class="stepN">4</span>Deine bereits gesendeten Einträge</div>
+            ${ownEntries.length ? `
+              <div class="studentOwnList">
+                ${ownEntries.map((entry) => `
+                  <div class="studentOwnItem">
+                    <strong>${escapeHtml(entry.item_text)}</strong> · ${escapeHtml(severityLabel(entry.severity))}
+                    ${entry.note ? `<div class="entryNote">${escapeHtml(entry.note)}</div>` : ""}
+                    <div class="studentOwnMeta">${escapeHtml(entry.category_label)} · ${escapeHtml(entry.time)}</div>
+                  </div>
+                `).join("")}
+              </div>
+            ` : `<div class="muted">Du hast für dieses Tagesprotokoll noch keine Einträge gesendet.</div>`}
+          </div>
+        `;
         return;
       }
 
@@ -1630,7 +1734,7 @@
           teacher_id: state.teacher.id,
         });
         state.currentSession = payload.session;
-        showMessage($("formMsg"), true, "Tagesprotokoll wurde gestartet.");
+        flashMessage($("formMsg"), true, payload.session?.status === "active" ? "Tagesprotokoll ist jetzt aktiv." : "Tagesprotokoll wurde geladen.");
         await loadTeacherSession();
       } catch (error) {
         showMessage($("formMsg"), false, `Start fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
@@ -1647,7 +1751,7 @@
           session_id: state.currentSession.id,
           teacher_id: state.teacher.id,
         });
-        showMessage($("formMsg"), true, "Tagesprotokoll wurde geschlossen.");
+        flashMessage($("formMsg"), true, "Tagesprotokoll wurde geschlossen.");
         await loadTeacherSession();
       } catch (error) {
         showMessage($("formMsg"), false, `Schließen fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
@@ -1675,7 +1779,7 @@
               note,
               teacher_id: state.teacher?.id || null,
             });
-            showMessage($("formMsg"), true, "Eintrag wurde aktualisiert.");
+            flashMessage($("formMsg"), true, "Eintrag wurde aktualisiert.");
           } else {
             await apiJson(FN_TEACHER_UPDATE, token, {
               action: "create",
@@ -1687,7 +1791,7 @@
               note,
               teacher_id: state.teacher?.id || null,
             });
-            showMessage($("formMsg"), true, "Eintrag wurde ergänzt.");
+            flashMessage($("formMsg"), true, "Eintrag wurde ergänzt.");
           }
 
           resetForm();
@@ -1712,7 +1816,14 @@
             note,
             student_id: state.studentIdFallback || null,
           });
-          showMessage($("formMsg"), true, "Danke. Dein Eintrag wurde anonym gespeichert.");
+          appendStudentOwnEntry({
+            item_text: state.selectedItem,
+            severity: state.selectedSeverity,
+            category_label: CATEGORIES[state.selectedCategory].label,
+            note,
+            time: new Date().toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }),
+          });
+          flashMessage($("formMsg"), true, "Erfolgreich gesendet.");
           resetForm();
           await loadStudentSession();
         }
