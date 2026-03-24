@@ -134,6 +134,25 @@
       border: 1px solid rgba(255,255,255,.14);
     }
     .headerDanger.active { display: inline-flex; }
+    .headerGhost.active { background: rgba(255,255,255,.9); color: #173258; }
+    .statusActions button.headerAmpel,
+    button.headerAmpel,
+    .headerAmpel {
+      background: #2b8eff !important;
+      color: white !important;
+      border: 0 !important;
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+      background-image: none !important;
+      text-shadow: none;
+    }
+    .headerAmpel .ampelGreen { color: #86efac !important; }
+    .headerAmpel .ampelOrange { color: #fdba74 !important; }
+    .headerAmpel .ampelRed { color: #fca5a5 !important; }
+    .headerAmpel .ampelGreen,
+    .headerAmpel .ampelOrange,
+    .headerAmpel .ampelRed {
+      font-weight: 900;
+    }
 
     .wrap {
       max-width: 1360px;
@@ -233,9 +252,63 @@
     .statusTitle { margin: 0; font-size: 1.05rem; }
     .statusSub { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
     .statusActions {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto auto auto;
       gap: 10px;
-      flex-wrap: wrap;
+      align-items: center;
+    }
+    .statusActions .slotLeft { grid-column: 1; justify-self: start; }
+    .statusActions .slotCenter { grid-column: 2; justify-self: center; }
+    .statusActions .slotRight { grid-column: 3; justify-self: end; }
+    .statusActions .active {
+      background: linear-gradient(90deg, var(--accent), #2b8eff);
+      color: white;
+    }
+    .studentInlineBehavior {
+      display: none;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(255,255,255,.72);
+      min-width: 360px;
+    }
+    .studentInlineBehavior.active {
+      display: flex;
+    }
+    .studentInlineBehaviorTop {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .studentInlineBehaviorText {
+      min-width: 0;
+      flex: 1;
+    }
+    .studentInlineBehaviorTitle {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .studentInlineBehaviorHint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 2px;
+    }
+    .studentInlineBehaviorBar {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 4px;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+    }
+    .studentInlineBehaviorBar .behaviorSeg {
+      height: 12px;
+      border-radius: 999px;
     }
 
     .view { display: none; }
@@ -446,6 +519,13 @@
       flex-direction: column;
     }
     .teacherControls.active { display: flex; }
+    .behaviorView {
+      display: none;
+      padding: 18px;
+      gap: 14px;
+      flex-direction: column;
+    }
+    .behaviorView.active { display: flex; }
     .behaviorPanel {
       border: 1px solid var(--rule);
       border-radius: 18px;
@@ -462,8 +542,8 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-height: 310px;
-      overflow-y: auto;
+      max-height: none;
+      overflow: visible;
     }
     .behaviorTeacherItem {
       border: 1px solid var(--rule);
@@ -684,47 +764,106 @@
     .classTop {
       padding: 20px 24px 18px;
       border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 400px;
       gap: 18px;
       align-items: center;
-      flex-wrap: wrap;
     }
     .classTitle { font-size: 1.08rem; font-weight: 800; }
     .classSub { font-size: 0.75rem; color: #9fb3d3; margin-top: 4px; line-height: 1.6; }
-    .legend {
-      margin-left: auto;
+    .classTopControls {
       display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 12px;
+      min-width: 0;
     }
-    .legendItem {
+    .classTopAction {
       display: flex;
+      justify-content: flex-end;
+      width: 100%;
       align-items: center;
-      gap: 6px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #bfc9db;
     }
-    .legendDot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
+    .importReflectionsBtn {
+      width: 260px;
+      height: 44px;
+      min-width: 260px;
+      min-height: 44px;
+      padding: 0 14px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .classModeSwitch {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+      min-height: 44px;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%;
+    }
+    .classModeBtn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(255,255,255,.06);
+      color: #dfe9fb;
+      height: 44px;
+      padding: 0 12px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .classModeBtn.active {
+      background: rgba(255,255,255,.18);
+      color: white;
+      border-color: rgba(255,255,255,.28);
+    }
+    .importReflectionsBtn.importDone {
+      background: #dcfce7;
+      color: #166534;
+      border-color: #86efac;
+    }
+    .importReflectionsBtn.importDone:disabled {
+      opacity: 1;
+      cursor: default;
+    }
+    .importReflectionsBtn.isHidden {
+      visibility: hidden;
+      pointer-events: none;
     }
     .classMain {
       display: grid;
       grid-template-columns: 1fr 400px;
       min-height: 620px;
     }
+    .reflectionInlineActions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .reflectionInlineActions button.active {
+      box-shadow: inset 0 0 0 2px var(--accent);
+      background: #eef6ff;
+      color: var(--ink);
+    }
     .cloudArea {
       padding: 30px;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
     }
     #wordCloud {
       display: flex;
       flex-wrap: wrap;
-      align-content: center;
+      align-content: flex-start;
       justify-content: center;
       gap: 10px 12px;
       width: 100%;
@@ -848,6 +987,9 @@
     @media (max-width: 1120px) {
       .workspace { grid-template-columns: 1fr; }
       .classMain { grid-template-columns: 1fr; }
+      .classTop { grid-template-columns: 1fr; }
+      .classTopControls { align-items: flex-start; }
+      .classModeSwitch, .classTopAction { justify-content: flex-start; }
       .impactPanel { border-left: 0; border-top: 1px solid rgba(148, 163, 184, 0.12); }
       .controlGrid { grid-template-columns: 1fr 1fr; }
       .summaryStats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -945,9 +1087,21 @@
             <h2 class="statusTitle" id="statusTitle">—</h2>
             <p class="statusSub" id="statusSub">—</p>
           </div>
+          <div class="studentInlineBehavior" id="studentInlineBehavior">
+            <div class="studentInlineBehaviorTop">
+              <div class="studentInlineBehaviorText">
+                <div class="studentInlineBehaviorTitle">Dein Verhaltensstatus</div>
+                <div class="studentInlineBehaviorHint" id="studentInlineBehaviorHint">Du siehst hier nur deinen eigenen Stand.</div>
+              </div>
+              <span class="behaviorBadge green" id="studentInlineBehaviorBadge">Grüner Bereich</span>
+            </div>
+            <div class="studentInlineBehaviorBar" id="studentInlineBehaviorBar"></div>
+          </div>
           <div class="statusActions">
-            <button class="ghost" id="refreshStateBtn" type="button">Aktualisieren</button>
-            <button class="danger" id="logoutInlineBtn" type="button">Logout</button>
+            <button class="ghost headerAmpel slotLeft" id="openBehaviorBtn" type="button" style="display:none;"><span class="ampelGreen">Verh</span><span class="ampelOrange">altens</span><span class="ampelRed">ampel</span></button>
+            <button class="ghost slotCenter" id="refreshStateBtn" type="button">Aktualisieren</button>
+            <button class="headerGhost slotRight" id="backFromBehaviorBtn" type="button" style="display:none;">Zurück</button>
+            <button class="danger slotRight" id="logoutInlineBtn" type="button">Logout</button>
           </div>
         </div>
       </div>
@@ -1015,27 +1169,11 @@
                 </div>
               </div>
               <div id="teacherSessionMsg" class="muted">Bitte Gruppe und Datum wählen.</div>
-              <div class="behaviorPanel">
-                <div class="behaviorPanelTitle">Verhaltensampel der Gruppe</div>
-                <div class="muted" id="teacherBehaviorMsg">Wähle eine Gruppe, um die Statusanzeige zu laden.</div>
-                <div class="behaviorTeacherList" id="teacherBehaviorList"></div>
-              </div>
             </div>
 
             <div class="studentSummary" id="studentSummary">
               <div class="sectionHead"><span class="stepN">S</span>Aktuelle Sitzung</div>
               <div id="studentSessionMsg" class="muted">Für deine Klasse ist gerade kein offenes Tagesprotokoll aktiv.</div>
-              <div class="behaviorStudentCard">
-                <div class="behaviorStudentTop">
-                  <div>
-                    <strong>Dein Verhaltensstatus</strong>
-                    <div class="muted" id="studentBehaviorHint">Du siehst hier nur deinen eigenen Stand.</div>
-                  </div>
-                  <span class="behaviorBadge green" id="studentBehaviorBadge">Grüner Bereich</span>
-                </div>
-                <div class="behaviorBar" id="studentBehaviorBar"></div>
-                <div class="behaviorLegend" id="studentBehaviorLegend">0 von 12 Punkten</div>
-              </div>
             </div>
 
             <div class="entryList" id="entryList"></div>
@@ -1044,16 +1182,20 @@
       </div>
 
       <div class="view" id="viewClass">
-        <div class="card classShell">
+        <div class="card classShell" id="classShell">
           <div class="classTop">
             <div>
               <div class="classTitle">Wie verletzend sind Worte und Taten?</div>
               <div class="classSub">Die Wortwolke zeigt nur tatsächlich eingetragene Vorfälle des aktuell geladenen Tagesprotokolls.</div>
             </div>
-            <div class="legend">
-              <div class="legendItem"><span class="legendDot" style="background:#facc15;"></span>Leicht</div>
-              <div class="legendItem"><span class="legendDot" style="background:#fb923c;"></span>Mittel</div>
-              <div class="legendItem"><span class="legendDot" style="background:#f87171;"></span>Schwer</div>
+            <div class="classTopControls">
+              <div class="classModeSwitch">
+                <button class="classModeBtn active" id="classModePerception" type="button">Wahrnehmung der Klasse</button>
+                <button class="classModeBtn" id="classModeReflection" type="button">Reflektierte Einordnung</button>
+              </div>
+              <div class="classTopAction">
+                <button class="ghost importReflectionsBtn isHidden" id="importReflectionsBtn" type="button">Alle aus Wahrnehmung übernehmen</button>
+              </div>
             </div>
           </div>
           <div class="classMain">
@@ -1061,6 +1203,16 @@
             <div class="impactPanel" id="impactPanel">
               <div class="impactEmpty">Wähle einen Begriff aus der Wortwolke, um Wirkung, Gefühle und pädagogische Hinweise zu sehen.</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="viewBehavior">
+        <div class="card behaviorView" id="behaviorView">
+          <div class="behaviorPanel">
+            <div class="behaviorPanelTitle">Verhaltensampel der Gruppe</div>
+            <div class="muted" id="teacherBehaviorMsg">Wähle eine Gruppe, um die Statusanzeige zu laden.</div>
+            <div class="behaviorTeacherList" id="teacherBehaviorList"></div>
           </div>
         </div>
       </div>
@@ -1078,6 +1230,7 @@
     const FN_TEACHER_CLOSE = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_close_session";
     const FN_TEACHER_UPDATE = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_update_entry";
     const FN_TEACHER_UPDATE_BEHAVIOR = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_update_behavior";
+    const FN_TEACHER_UPDATE_REFLECTION = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_teacher_update_reflection";
     const FN_STUDENT_STATUS = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_student_status";
     const FN_STUDENT_ADD = "https://dnlencbwbbriijmzijci.functions.supabase.co/climate_student_add_entry";
 
@@ -1231,6 +1384,8 @@
       activeGroup: null,
       currentSession: null,
       entries: [],
+      reflections: [],
+      classViewMode: "perception",
       selectedCategory: "verbal",
       selectedItem: null,
       selectedSeverity: null,
@@ -1351,12 +1506,79 @@
       return `Noch ${4 - points} Schritte bis Gelb. Du bist aktuell im grünen Bereich.`;
     }
 
+    function severityToPoints(severity) {
+      if (severity === "s") return 10;
+      if (severity === "m") return 6;
+      return 2;
+    }
+
+    function pointsToSeverity(points) {
+      if (points >= 9) return "s";
+      if (points >= 4) return "m";
+      return "l";
+    }
+
+    function normalizeReflectionSeed(points) {
+      const severity = pointsToSeverity(points);
+      if (severity === "s") return 10;
+      if (severity === "m") return 6;
+      return 2;
+    }
+
+    function colorFromPoints(points) {
+      const value = Math.max(0, Math.min(12, Number(points || 0)));
+      const hue = 52 - (value / 12) * 48;
+      const saturation = 92;
+      const lightness = 58 - (value / 12) * 10;
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
+
     function renderBehaviorBar(points) {
       return Array.from({ length: 12 }, (_, index) => {
         const current = index + 1;
         const zone = current >= 9 ? "red" : current >= 4 ? "yellow" : "green";
         return `<span class="behaviorSeg ${current <= points ? `on ${zone}` : ""}"></span>`;
       }).join("");
+    }
+
+    function buildPerceptionMap() {
+      const studentEntries = (state.entries || []).filter((entry) => entry.source === "student");
+      const grouped = new Map();
+      studentEntries.forEach((entry) => {
+        const key = entry.item_text;
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            text: entry.item_text,
+            categoryKey: entry.category_key,
+            categoryLabel: entry.category_label,
+            count: 0,
+            totalPoints: 0,
+          });
+        }
+        const current = grouped.get(key);
+        current.count += 1;
+        current.totalPoints += severityToPoints(entry.severity);
+      });
+
+      return Array.from(grouped.values()).map((item) => ({
+        ...item,
+        avgPoints: item.count ? item.totalPoints / item.count : 0,
+      }));
+    }
+
+    function buildReflectionMap() {
+      const studentItems = buildPerceptionMap();
+      const reflectionMap = new Map((state.reflections || []).map((reflection) => [reflection.item_text, reflection]));
+      return studentItems
+        .filter((item) => reflectionMap.has(item.text))
+        .map((item) => {
+          const reflection = reflectionMap.get(item.text);
+          return {
+            ...item,
+            reflectedPoints: Number(reflection.reflected_points || 0),
+            teacherNote: reflection.teacher_note || null,
+          };
+        });
     }
 
     function findCategoryItem(itemText) {
@@ -1376,15 +1598,20 @@
       $("tabEntry").textContent = state.role === "teacher" ? "Lehrkraft" : "Schüleransicht";
       $("tabEntry").classList.toggle("active", state.currentView === "entry");
       $("tabClass").classList.toggle("active", state.currentView === "class");
+      $("openBehaviorBtn").classList.toggle("active", state.currentView === "behavior");
       $("viewEntry").classList.toggle("active", state.currentView === "entry");
       $("viewClass").classList.toggle("active", state.currentView === "class");
+      $("viewBehavior").classList.toggle("active", state.currentView === "behavior");
+      $("behaviorView").classList.toggle("active", state.currentView === "behavior");
       $("modeToggle").classList.toggle("active", !!state.role);
       if (state.currentView === "class") renderClassView();
+      if (state.currentView === "behavior") renderBehaviorView();
     }
 
     function setView(view) {
       state.currentView = view;
       syncTabs();
+      updateHeader();
     }
 
     function updateHeader() {
@@ -1392,23 +1619,33 @@
       $("hdrStats").classList.toggle("active", !!state.role);
       $("logoutBtn").classList.toggle("active", !!state.role);
       $("rolePill").textContent = `Rolle: ${state.role === "teacher" ? "Lehrkraft" : state.role === "student" ? "Schüler" : "—"}`;
+      $("backFromBehaviorBtn").style.display = state.role === "teacher" && state.currentView === "behavior" ? "" : "none";
+      $("logoutInlineBtn").style.display = state.role === "teacher" && state.currentView === "behavior" ? "none" : "";
 
       if (state.role === "teacher") {
         const groupName = state.activeGroup?.name || "keine Gruppe gewählt";
         const protocolDate = $("dateInput").value || todayIso();
         $("contextPill").textContent = `Gruppe: ${groupName} · ${protocolDate}`;
         $("statusTitle").textContent = state.teacher?.display_name || "Lehrkraft";
+        $("studentInlineBehavior").classList.remove("active");
+        $("openBehaviorBtn").style.display = "";
         $("statusSub").textContent = state.currentSession
           ? `Tagesprotokoll ${state.currentSession.status === "active" ? "aktiv" : "geschlossen"} für ${state.activeGroup?.name || "—"} am ${state.currentSession.protocol_date}.`
           : "Wähle eine Gruppe und ein Datum, starte ein Tagesprotokoll und bearbeite die Einträge deiner Klasse.";
       } else if (state.role === "student") {
         $("contextPill").textContent = `Klasse: ${state.student?.class_name || "—"}`;
         $("statusTitle").textContent = state.student?.display_name || "Schülerzugang";
+        $("studentInlineBehavior").classList.add("active");
+        $("openBehaviorBtn").style.display = "none";
         $("statusSub").textContent = state.currentSession
-          ? `Für ${state.activeGroup?.name || state.student?.class_name || "deine Klasse"} ist gerade ein Tagesprotokoll geöffnet. Du kannst anonym bis zu 10 Einträge hinzufügen.`
-          : "Zurzeit ist für deine Klasse kein offenes Tagesprotokoll aktiv.";
+          ? state.currentSession.status === "active"
+            ? `Für ${state.activeGroup?.name || state.student?.class_name || "deine Klasse"} ist gerade ein Tagesprotokoll geöffnet. Du kannst anonym bis zu 10 Einträge hinzufügen.`
+            : `Für ${state.activeGroup?.name || state.student?.class_name || "deine Klasse"} siehst du das zuletzt geschlossene Tagesprotokoll vom ${state.currentSession.protocol_date}.`
+          : "Zurzeit ist für deine Klasse kein offenes und noch kein zuletzt geschlossenes Tagesprotokoll verfügbar.";
       } else {
         $("contextPill").textContent = "Kontext: —";
+        $("studentInlineBehavior").classList.remove("active");
+        $("openBehaviorBtn").style.display = "none";
       }
 
       const entries = state.entries || [];
@@ -1515,7 +1752,9 @@
         }
       } else if (state.role === "student") {
         if (!state.currentSession) {
-          text = "Für deine Klasse ist gerade kein offenes Tagesprotokoll aktiv.";
+          text = "Für deine Klasse gibt es aktuell kein offenes und noch kein zuletzt geschlossenes Tagesprotokoll.";
+        } else if (state.currentSession.status !== "active") {
+          text = `Dieses Tagesprotokoll ist bereits geschlossen. Du kannst die Klassenansicht vom ${state.currentSession.protocol_date} weiterhin ansehen, aber keine neuen Einträge mehr senden.`;
         } else {
           const remaining = Number(state.student?.entries_remaining ?? 0);
           text = `Du kannst anonym bis zu 10 Einträge pro offenem Tagesprotokoll erfassen. Verbleibend: ${remaining}.`;
@@ -1550,6 +1789,10 @@
         startBtn.textContent = "Fortsetzen";
       }
 
+    }
+
+    function renderBehaviorView() {
+      if (state.role !== "teacher") return;
       const behaviorMembers = state.teacherBehaviorMembers || [];
       $("teacherBehaviorMsg").textContent = behaviorMembers.length
         ? "Die Lehrkraft kann den Punktestand jedes Kindes fein anpassen."
@@ -1588,23 +1831,30 @@
 
       const points = Number(state.studentBehavior?.points || 0);
       const zone = behaviorZone(points);
-      $("studentBehaviorBadge").className = `behaviorBadge ${zone}`;
-      $("studentBehaviorBadge").textContent = behaviorZoneLabel(points);
-      $("studentBehaviorBar").innerHTML = renderBehaviorBar(points);
-      $("studentBehaviorLegend").textContent = `${points} von 12 Punkten · ${behaviorHint(points)}`;
-      $("studentBehaviorHint").textContent = state.studentBehavior?.teacher_note
+      $("studentInlineBehaviorBadge").className = `behaviorBadge ${zone}`;
+      $("studentInlineBehaviorBadge").textContent = behaviorZoneLabel(points);
+      $("studentInlineBehaviorBar").innerHTML = renderBehaviorBar(points);
+      $("studentInlineBehaviorHint").textContent = state.studentBehavior?.teacher_note
         ? `Hinweis der Lehrkraft: ${state.studentBehavior.teacher_note}`
-        : "Du siehst hier nur deinen eigenen Stand.";
+        : `${points} von 12 Punkten · ${behaviorHint(points)}`;
 
       if (!state.currentSession) {
-        $("studentSessionMsg").innerHTML = "Für deine Klasse ist aktuell kein offenes Tagesprotokoll aktiv.";
+        $("studentSessionMsg").innerHTML = "Für deine Klasse ist aktuell kein offenes und noch kein zuletzt geschlossenes Tagesprotokoll vorhanden.";
+        return;
+      }
+
+      if (state.currentSession.status === "active") {
+        $("studentSessionMsg").innerHTML = `
+          <strong>Offenes Tagesprotokoll:</strong> ${escapeHtml(state.activeGroup?.name || state.student?.class_name || "—")} am ${escapeHtml(state.currentSession.protocol_date)}<br>
+          Bereits genutzt: <strong>${Number(state.student?.entries_used || 0)}</strong> von 10 Einträgen ·
+          Verbleibend: <strong>${Number(state.student?.entries_remaining || 0)}</strong>
+        `;
         return;
       }
 
       $("studentSessionMsg").innerHTML = `
-        <strong>Offenes Tagesprotokoll:</strong> ${escapeHtml(state.activeGroup?.name || state.student?.class_name || "—")} am ${escapeHtml(state.currentSession.protocol_date)}<br>
-        Bereits genutzt: <strong>${Number(state.student?.entries_used || 0)}</strong> von 10 Einträgen ·
-        Verbleibend: <strong>${Number(state.student?.entries_remaining || 0)}</strong>
+        <strong>Letztes geschlossenes Tagesprotokoll:</strong> ${escapeHtml(state.activeGroup?.name || state.student?.class_name || "—")} am ${escapeHtml(state.currentSession.protocol_date)}<br>
+        Du kannst die Klassenansicht weiterhin ansehen, aber keine neuen Einträge mehr senden.
       `;
     }
 
@@ -1613,12 +1863,14 @@
 
       if (state.role === "student") {
         if (!state.currentSession) {
-          list.innerHTML = `<div class="entryEmpty">Sobald die Lehrkraft ein Tagesprotokoll für deine Klasse startet, kannst du hier anonym Einträge erfassen.</div>`;
+          list.innerHTML = `<div class="entryEmpty">Sobald die Lehrkraft ein Tagesprotokoll für deine Klasse startet oder eines abgeschlossen wurde, siehst du hier den aktuellen Stand.</div>`;
           return;
         }
         const ownEntries = loadStudentOwnEntries();
         list.innerHTML = `
-          <div class="entryEmpty">Die Schüleransicht dient zum anonymen Erfassen neuer Vorfälle. Die Klassenansicht zeigt dir die Wortwolke des aktuell offenen Tagesprotokolls.</div>
+          <div class="entryEmpty">${state.currentSession.status === "active"
+            ? "Die Schüleransicht dient zum anonymen Erfassen neuer Vorfälle. Die Klassenansicht zeigt dir die Wortwolke des aktuellen Tagesprotokolls."
+            : "Dieses Tagesprotokoll ist bereits geschlossen. In der Klassenansicht kannst du die letzte Wortwolke und die Einordnung weiterhin ansehen."}</div>
           <div class="box" style="margin-top:4px;">
             <div class="sectionHead"><span class="stepN">4</span>Deine bereits gesendeten Einträge</div>
             ${ownEntries.length ? `
@@ -1673,63 +1925,81 @@
     function renderClassView() {
       const cloud = $("wordCloud");
       const panel = $("impactPanel");
-      const entries = state.entries || [];
+      const importBtn = $("importReflectionsBtn");
+      const perceptionItems = buildPerceptionMap();
+      const reflectionItems = buildReflectionMap();
+      const sourceItems = state.classViewMode === "reflection" ? reflectionItems : perceptionItems;
+      const importedAll = perceptionItems.length > 0 && perceptionItems.every((item) =>
+        reflectionItems.some((reflection) => reflection.text === item.text)
+      );
+      $("classModePerception").classList.toggle("active", state.classViewMode === "perception");
+      $("classModeReflection").classList.toggle("active", state.classViewMode === "reflection");
+      importBtn.classList.toggle("isHidden", !(state.role === "teacher" && state.classViewMode === "reflection"));
+      importBtn.classList.toggle("importDone", importedAll);
+      importBtn.disabled = !perceptionItems.length || importedAll;
+      importBtn.textContent = importedAll ? "Bereits übernommen" : "Aus Wahrnehmung übernehmen";
 
-      if (!entries.length) {
+      if (!sourceItems.length) {
         cloud.innerHTML = `<div class="entryEmpty" style="width:min(560px,100%);">Für die aktuelle Auswahl gibt es noch keine erfassten Vorfälle.</div>`;
-        panel.innerHTML = `<div class="impactEmpty">Sobald Einträge vorhanden sind, entsteht hier eine Wortwolke aus den tatsächlich erfassten Vorfällen.</div>`;
+        panel.innerHTML = `<div class="impactEmpty">${state.classViewMode === "reflection" ? "Sobald die Lehrkraft Vorfälle reflektiert einordnet, entsteht hier die Vergleichsansicht." : "Sobald Einträge vorhanden sind, entsteht hier eine Wortwolke aus den tatsächlich erfassten Vorfällen."}</div>`;
         return;
       }
-
-      const grouped = new Map();
-      entries.forEach((entry) => {
-        const key = entry.item_text;
-        if (!grouped.has(key)) {
-          grouped.set(key, {
-            text: entry.item_text,
-            categoryLabel: entry.category_label,
-            severity: entry.severity,
-            count: 0,
-          });
-        }
-        grouped.get(key).count += 1;
-      });
-
-      const words = Array.from(grouped.values()).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, "de"));
+      const words = sourceItems.sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, "de"));
       const maxCount = Math.max(...words.map((word) => word.count), 1);
       cloud.innerHTML = words.map((word) => {
-        const base = word.severity === "l" ? 14 : word.severity === "m" ? 16 : 18;
+        const points = state.classViewMode === "reflection" ? word.reflectedPoints : word.avgPoints;
+        const severity = pointsToSeverity(points);
+        const base = severity === "l" ? 14 : severity === "m" ? 16 : 18;
         const boost = Math.round((word.count / maxCount) * 14);
         const active = state.selectedImpactItem === word.text;
-        return `<span class="wordTag ${word.severity} seen ${active ? "active" : ""}" data-word="${escapeHtml(word.text)}" style="font-size:${base + boost}px;opacity:${Math.min(.52 + word.count / maxCount * .48, 1)};">${escapeHtml(word.text)}</span>`;
+        return `<span class="wordTag ${severity} seen ${active ? "active" : ""}" data-word="${escapeHtml(word.text)}" style="font-size:${base + boost}px;opacity:${Math.min(.52 + word.count / maxCount * .48, 1)};color:${colorFromPoints(points)};border-color:${colorFromPoints(points)};">${escapeHtml(word.text)}</span>`;
       }).join("");
 
       cloud.querySelectorAll(".wordTag").forEach((tag) => {
         tag.addEventListener("click", () => showImpact(tag.dataset.word));
       });
 
-      if (!state.selectedImpactItem || !grouped.has(state.selectedImpactItem)) {
+      if (!state.selectedImpactItem || !sourceItems.some((item) => item.text === state.selectedImpactItem)) {
         state.selectedImpactItem = words[0]?.text || null;
       }
       showImpact(state.selectedImpactItem);
     }
 
     function showImpact(itemText) {
-      const entries = state.entries.filter((entry) => entry.item_text === itemText);
-      if (!entries.length) return;
+      const perception = buildPerceptionMap().find((item) => item.text === itemText);
+      if (!perception) return;
+      const reflection = buildReflectionMap().find((item) => item.text === itemText) || null;
       state.selectedImpactItem = itemText;
 
       document.querySelectorAll(".wordTag").forEach((tag) => {
         tag.classList.toggle("active", tag.dataset.word === itemText);
       });
 
-      const severity = entries[0].severity;
+      const viewPoints = state.classViewMode === "reflection" && reflection ? reflection.reflectedPoints : perception.avgPoints;
+      const severity = pointsToSeverity(viewPoints);
       const meta = SEVERITY_META[severity];
       const override = IMPACT_OVERRIDES[itemText] || {};
-      const count = entries.length;
-      const categoryLabel = entries[0].category_label;
+      const count = perception.count;
+      const categoryLabel = perception.categoryLabel;
       const feels = override.feels || meta.feels;
       const why = override.why || meta.why;
+      const comparison = reflection
+        ? `Kinderwahrnehmung: ${perception.avgPoints.toFixed(1)}/12 · Reflektierte Einordnung: ${reflection.reflectedPoints}/12`
+        : `Kinderwahrnehmung: ${perception.avgPoints.toFixed(1)}/12`;
+      const reflectedSeverity = reflection ? pointsToSeverity(reflection.reflectedPoints) : null;
+      const teacherReflectionControls = state.role === "teacher" && state.classViewMode === "reflection"
+        ? `
+          <div class="impactSection">
+            <div class="impactHead">Reflektierte Einordnung anpassen</div>
+            <div class="impactBody">Die Lehrkraft kann diesen Vorfall direkt hier im Gespräch mit der Klasse neu einordnen.</div>
+            <div class="reflectionInlineActions">
+              <button class="ghost ${reflectedSeverity === "l" ? "active" : ""}" type="button" data-impact-reflect="${escapeHtml(itemText)}" data-impact-category="${escapeHtml(perception.categoryKey)}" data-impact-label="${escapeHtml(categoryLabel)}" data-impact-points="2">Leicht</button>
+              <button class="ghost ${reflectedSeverity === "m" ? "active" : ""}" type="button" data-impact-reflect="${escapeHtml(itemText)}" data-impact-category="${escapeHtml(perception.categoryKey)}" data-impact-label="${escapeHtml(categoryLabel)}" data-impact-points="6">Mittel</button>
+              <button class="danger ${reflectedSeverity === "s" ? "active" : ""}" type="button" data-impact-reflect="${escapeHtml(itemText)}" data-impact-category="${escapeHtml(perception.categoryKey)}" data-impact-label="${escapeHtml(categoryLabel)}" data-impact-points="10">Schwer</button>
+            </div>
+          </div>
+        `
+        : "";
 
       $("impactPanel").innerHTML = `
         <div class="impactCard">
@@ -1756,8 +2026,26 @@
             <div class="impactHead">Pädagogische Hinweise</div>
             <div class="impactBody">${escapeHtml(meta.note)}</div>
           </div>
+          <div class="impactSection">
+            <div class="impactHead">Vergleich</div>
+            <div class="impactBody">${escapeHtml(comparison)}</div>
+          </div>
+          ${teacherReflectionControls}
         </div>
       `;
+
+      if (state.role === "teacher" && state.classViewMode === "reflection") {
+        $("impactPanel").querySelectorAll("[data-impact-reflect]").forEach((button) => {
+          button.addEventListener("click", () => {
+            updateReflection(
+              button.dataset.impactReflect,
+              button.dataset.impactCategory,
+              button.dataset.impactLabel,
+              Number(button.dataset.impactPoints || 0),
+            );
+          });
+        });
+      }
     }
 
     function startEditEntry(entryId) {
@@ -1844,15 +2132,19 @@
       if (!state.teacher) return;
       const groupId = $("groupSelect").value;
       const protocolDate = $("dateInput").value || todayIso();
+      const previousSelectedImpactItem = state.selectedImpactItem;
       const selectedGroup = state.teacherGroups.find((group) => group.id === groupId) || null;
       state.activeGroup = selectedGroup;
 
       if (!groupId) {
         state.currentSession = null;
         state.entries = [];
+        state.reflections = [];
+        state.selectedImpactItem = null;
         state.teacherBehaviorMembers = [];
         updateHeader();
         renderTeacherControls();
+        renderBehaviorView();
         renderEntryList();
         renderClassView();
         renderFormInfo();
@@ -1868,13 +2160,18 @@
 
       state.currentSession = payload.session || null;
       state.entries = payload.entries || [];
+      state.reflections = payload.reflections || [];
       state.teacherBehaviorMembers = (payload.behavior_statuses || []).map((member) => ({
         ...member,
         points: Number(member.points || 0),
       }));
-      state.selectedImpactItem = state.entries[0]?.item_text || null;
+      const availableImpactItems = new Set(state.entries.map((entry) => entry.item_text));
+      state.selectedImpactItem = previousSelectedImpactItem && availableImpactItems.has(previousSelectedImpactItem)
+        ? previousSelectedImpactItem
+        : (state.entries[0]?.item_text || null);
       updateHeader();
       renderTeacherControls();
+      renderBehaviorView();
       renderEntryList();
       renderClassView();
       renderFormInfo();
@@ -1883,6 +2180,7 @@
     async function loadStudentSession() {
       const token = await getTokenOrNull();
       if (!token) return;
+      const previousSelectedImpactItem = state.selectedImpactItem;
 
       const payload = await apiJson(FN_STUDENT_STATUS, token, {
         student_id: state.studentIdFallback || null,
@@ -1900,12 +2198,16 @@
       state.activeGroup = payload.group || null;
       state.currentSession = payload.session || null;
       state.entries = payload.entries || [];
+      state.reflections = payload.reflections || [];
       state.studentBehavior = {
         points: Number(payload.behavior_status?.points || 0),
         teacher_note: payload.behavior_status?.teacher_note || null,
         updated_at: payload.behavior_status?.updated_at || null,
       };
-      state.selectedImpactItem = state.entries[0]?.item_text || null;
+      const availableImpactItems = new Set(state.entries.map((entry) => entry.item_text));
+      state.selectedImpactItem = previousSelectedImpactItem && availableImpactItems.has(previousSelectedImpactItem)
+        ? previousSelectedImpactItem
+        : (state.entries[0]?.item_text || null);
 
       updateHeader();
       renderStudentSummary();
@@ -1947,6 +2249,59 @@
         await loadTeacherSession();
       } catch (error) {
         showMessage($("formMsg"), false, `Status konnte nicht aktualisiert werden: ${escapeHtml(String(error.message || error))}`);
+      }
+    }
+
+    async function updateReflection(itemText, categoryKey, categoryLabel, reflectedPoints) {
+      const token = await getTokenOrNull();
+      if (!token || !state.teacher || !state.currentSession?.id || !itemText) return;
+
+      try {
+        await apiJson(FN_TEACHER_UPDATE_REFLECTION, token, {
+          session_id: state.currentSession.id,
+          item_text: itemText,
+          category_key: categoryKey,
+          category_label: categoryLabel,
+          reflected_points: reflectedPoints,
+          teacher_id: state.teacher.id,
+        });
+        flashMessage($("formMsg"), true, "Reflektierte Einordnung wurde gespeichert.");
+        await loadTeacherSession();
+        if (state.currentView === "class") renderClassView();
+      } catch (error) {
+        showMessage($("formMsg"), false, `Reflexion konnte nicht gespeichert werden: ${escapeHtml(String(error.message || error))}`);
+      }
+    }
+
+    async function importPerceptionToReflection() {
+      const token = await getTokenOrNull();
+      if (!token || !state.teacher || !state.currentSession?.id) return;
+
+      const items = buildPerceptionMap();
+      if (!items.length) {
+        showMessage($("formMsg"), false, "Es gibt noch keine Wahrnehmungsdaten zum Übernehmen.");
+        return;
+      }
+
+      try {
+        for (const item of items) {
+          await apiJson(FN_TEACHER_UPDATE_REFLECTION, token, {
+            session_id: state.currentSession.id,
+            item_text: item.text,
+            category_key: item.categoryKey,
+            category_label: item.categoryLabel,
+            reflected_points: normalizeReflectionSeed(item.avgPoints),
+            teacher_id: state.teacher.id,
+          });
+        }
+        flashMessage($("formMsg"), true, "Alle Vorfälle wurden in die reflektierte Variante übernommen.");
+        await loadTeacherSession();
+        if (state.currentView === "class") {
+          state.classViewMode = "reflection";
+          renderClassView();
+        }
+      } catch (error) {
+        showMessage($("formMsg"), false, `Übernahme fehlgeschlagen: ${escapeHtml(String(error.message || error))}`);
       }
     }
 
@@ -2063,6 +2418,7 @@
         renderSeverityButtons();
         renderReaction();
         renderTeacherControls();
+        renderBehaviorView();
         renderFormInfo();
         renderEntryList();
         syncTabs();
@@ -2175,6 +2531,7 @@
       state.activeGroup = null;
       state.currentSession = null;
       state.entries = [];
+      state.reflections = [];
       state.editingEntryId = null;
       $("loginScreen").style.display = "";
       $("app").style.display = "none";
@@ -2189,6 +2546,17 @@
 
     $("tabEntry").addEventListener("click", () => setView("entry"));
     $("tabClass").addEventListener("click", () => setView("class"));
+    $("openBehaviorBtn").addEventListener("click", () => setView("behavior"));
+    $("backFromBehaviorBtn").addEventListener("click", () => setView("entry"));
+    $("classModePerception").addEventListener("click", () => {
+      state.classViewMode = "perception";
+      renderClassView();
+    });
+    $("classModeReflection").addEventListener("click", () => {
+      state.classViewMode = "reflection";
+      renderClassView();
+    });
+    $("importReflectionsBtn").addEventListener("click", importPerceptionToReflection);
     $("studentLoginBtn").addEventListener("click", loginStudent);
     $("teacherLoginBtn").addEventListener("click", loginTeacher);
     $("studentCode").addEventListener("keydown", (event) => { if (event.key === "Enter") loginStudent(); });

@@ -72,12 +72,13 @@ Deno.serve(async (req) => {
         .insert({
           session_id: sessionId,
           severity,
+          source: "teacher",
           category_key: categoryKey,
           category_label: categoryLabel,
           item_text: itemText,
           note,
         })
-        .select("id,severity,category_key,category_label,item_text,note,created_at,updated_at")
+        .select("id,severity,source,category_key,category_label,item_text,note,created_at,updated_at")
         .single();
 
       if (createErr || !created) return fail("Eintrag konnte nicht angelegt werden", 400, createErr?.message);
@@ -132,7 +133,7 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", entryId)
-      .select("id,severity,category_key,category_label,item_text,note,created_at,updated_at")
+      .select("id,severity,source,category_key,category_label,item_text,note,created_at,updated_at")
       .single();
 
     if (updateErr || !updated) return fail("Eintrag konnte nicht aktualisiert werden", 400, updateErr?.message);

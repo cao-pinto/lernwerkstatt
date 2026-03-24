@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     if (usage.error) return fail("Eintragslimit konnte nicht geladen werden", 400, usage.error.message);
 
     return ok({
-      entry: rpc.data,
+      entry: Array.isArray(rpc.data) ? rpc.data[0] : rpc.data,
       entries_used: Number(usage.data?.entry_count || 0),
       entries_remaining: Math.max(0, 10 - Number(usage.data?.entry_count || 0)),
     });

@@ -9,6 +9,7 @@
 - `climate_teacher_start_session`
 - `climate_teacher_update_entry`
 - `climate_teacher_update_behavior`
+- `climate_teacher_update_reflection`
 - `feedback_close_round`
 - `feedback_reset_round`
 - `feedback_start_round`
@@ -28,6 +29,7 @@
 - Migration ausführen: `db/lernwerkstatt_school_model.sql`
 - Fuer soziale Rueckmeldungen zusaetzlich: `db/social_feedback_feature.sql`
 - Fuer Klassenklima zusaetzlich: `db/class_climate_feature.sql`
+- Fuer Klassenklima-Reflexionen zusaetzlich: `db/class_climate_reflection_feature.sql`
 - Fuer Verhaltensstatus zusaetzlich: `db/student_behavior_feature.sql`
 - In Supabase Secrets setzen:
   - `SUPABASE_URL`
@@ -47,6 +49,7 @@ supabase functions deploy climate_teacher_session_status
 supabase functions deploy climate_teacher_start_session
 supabase functions deploy climate_teacher_update_entry
 supabase functions deploy climate_teacher_update_behavior
+supabase functions deploy climate_teacher_update_reflection
 supabase functions deploy feedback_close_round
 supabase functions deploy feedback_reset_round
 supabase functions deploy feedback_start_round

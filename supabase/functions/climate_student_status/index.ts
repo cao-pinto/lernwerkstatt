@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: session, error: sessionErr } = await supabase
+    const { data: activeSession, error: activeSessionErr } = await supabase
       .from("class_climate_sessions")
       .select("id,protocol_date,status,started_at,closed_at")
       .eq("group_id", group.id)
@@ -104,7 +104,24 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (sessionErr) return fail("Tagesprotokoll konnte nicht geladen werden", 400, sessionErr.message);
+    if (activeSessionErr) return fail("Aktives Tagesprotokoll konnte nicht geladen werden", 400, activeSessionErr.message);
+
+    let session = activeSession;
+
+    if (!session) {
+      const { data: closedSession, error: closedSessionErr } = await supabase
+        .from("class_climate_sessions")
+        .select("id,protocol_date,status,started_at,closed_at")
+        .eq("group_id", group.id)
+        .eq("status", "closed")
+        .order("protocol_date", { ascending: false })
+        .order("closed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (closedSessionErr) return fail("Letztes geschlossenes Tagesprotokoll konnte nicht geladen werden", 400, closedSessionErr.message);
+      session = closedSession;
+    }
 
     if (!session) {
       return ok({
@@ -114,6 +131,7 @@ Deno.serve(async (req) => {
         entries_remaining: 0,
         entries_used: 0,
         entries: [],
+        reflections: [],
       });
     }
 
@@ -128,11 +146,19 @@ Deno.serve(async (req) => {
 
     const { data: entries, error: entriesErr } = await supabase
       .from("class_climate_entries")
-      .select("id,severity,category_key,category_label,item_text,note,created_at,updated_at")
+      .select("id,severity,source,category_key,category_label,item_text,note,created_at,updated_at")
       .eq("session_id", session.id)
       .order("created_at", { ascending: false });
 
     if (entriesErr) return fail("Tagesprotokolleinträge konnten nicht geladen werden", 400, entriesErr.message);
+
+    const { data: reflections, error: reflectionsErr } = await supabase
+      .from("class_climate_reflections")
+      .select("session_id,category_key,category_label,item_text,reflected_points,teacher_note,updated_at")
+      .eq("session_id", session.id)
+      .order("updated_at", { ascending: false });
+
+    if (reflectionsErr) return fail("Reflektierte Einordnungen konnten nicht geladen werden", 400, reflectionsErr.message);
 
     const used = Number(usage.data?.entry_count || 0);
     const behavior = await supabase
@@ -154,6 +180,7 @@ Deno.serve(async (req) => {
       entries_used: used,
       entries_remaining: Math.max(0, 10 - used),
       entries: entries || [],
+      reflections: reflections || [],
       behavior_status: {
         points: Number(behavior.data?.points || 0),
         teacher_note: behavior.data?.teacher_note || null,

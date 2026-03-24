@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
         },
         session: null,
         entries: [],
+        reflections: [],
         behavior_statuses: (students || []).map((student) => ({
           student_id: student.id,
           display_name: student.display_name,
@@ -121,11 +122,19 @@ Deno.serve(async (req) => {
 
     const { data: entries, error: entriesErr } = await supabase
       .from("class_climate_entries")
-      .select("id,severity,category_key,category_label,item_text,note,created_at,updated_at")
+      .select("id,severity,source,category_key,category_label,item_text,note,created_at,updated_at")
       .eq("session_id", session.id)
       .order("created_at", { ascending: false });
 
     if (entriesErr) return fail("Einträge konnten nicht geladen werden", 400, entriesErr.message);
+
+    const { data: reflections, error: reflectionsErr } = await supabase
+      .from("class_climate_reflections")
+      .select("session_id,category_key,category_label,item_text,reflected_points,teacher_note,updated_at")
+      .eq("session_id", session.id)
+      .order("updated_at", { ascending: false });
+
+    if (reflectionsErr) return fail("Reflektierte Einordnungen konnten nicht geladen werden", 400, reflectionsErr.message);
 
     const { data: memberLinks, error: memberLinkErr } = await supabase
       .from("teacher_group_students")
@@ -166,6 +175,7 @@ Deno.serve(async (req) => {
       },
       session,
       entries: entries || [],
+      reflections: reflections || [],
       behavior_statuses: (students || []).map((student) => ({
         student_id: student.id,
         display_name: student.display_name,
