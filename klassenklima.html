@@ -387,8 +387,8 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      max-height: 260px;
-      overflow-y: auto;
+      max-height: none;
+      overflow: visible;
     }
     .itemBtn {
       display: flex;
@@ -431,6 +431,28 @@
     }
     .itemBtn.on .itemSev {
       color: var(--accent);
+    }
+    .itemCustomRow {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .itemCustomRow input {
+      min-width: 0;
+      border-radius: 14px;
+      padding: 8px 10px;
+      min-height: 42px;
+    }
+    .itemCustomBtn {
+      min-height: 42px;
+      border-radius: 14px;
+      padding: 8px 12px;
+    }
+    .itemCustomBtn.active {
+      background: linear-gradient(90deg, rgba(31,111,235,.18), rgba(43,142,255,.3));
+      border-color: var(--accent);
+      color: var(--ink);
     }
 
     .sevGrid {
@@ -1125,11 +1147,6 @@
                 <button class="sevBtn m" id="sevMedium" type="button"><strong>🟠</strong>Mittel</button>
                 <button class="sevBtn s" id="sevSevere" type="button"><strong>🔴</strong>Schwer</button>
               </div>
-              <div class="hint">
-                <strong>Leicht:</strong> einzelne Grenzverletzung ohne massive Einschüchterung.<br>
-                <strong>Mittel:</strong> deutliche Herabsetzung, Ausgrenzung oder körperliche Übergriffigkeit.<br>
-                <strong>Schwer:</strong> sexualisiert, systematisch, digital verbreitet oder stark bedrohlich.
-              </div>
             </div>
 
             <div class="box">
@@ -1248,6 +1265,7 @@
           { t: "Du bist hässlich", sev: "l" },
           { t: "Du bist so dumm", sev: "l" },
           { t: "Du stinkst", sev: "l" },
+          { t: "Neger", sev: "s" },
           { t: "Halt dein Maul", sev: "m" },
           { t: "Niemand mag dich", sev: "m" },
           { t: "Verpiss dich", sev: "m" },
@@ -1261,6 +1279,9 @@
           { t: "Am Rucksack ziehen", sev: "m" },
           { t: "Treten oder Stoßen", sev: "m" },
           { t: "Sachen verstecken", sev: "m" },
+          { t: "Gefehler", sev: "m" },
+          { t: "Reinrutschen", sev: "m" },
+          { t: "Schwitzkasten", sev: "m" },
           { t: "Schlagen", sev: "s" },
           { t: "Spucken", sev: "s" },
         ],
@@ -1281,6 +1302,7 @@
         color: "#6c3483",
         items: [
           { t: "Augen verdrehen", sev: "l" },
+          { t: "Sachen angreifen", sev: "m" },
           { t: "Zeigen und lachen", sev: "m" },
           { t: "Nachmachen und verspotten", sev: "m" },
           { t: "Einschüchternde Blicke", sev: "m" },
@@ -1306,6 +1328,8 @@
           { t: "Screenshots weiterleiten", sev: "s" },
           { t: "Peinliche Fotos teilen", sev: "s" },
           { t: "Aus Chats ausschließen", sev: "m" },
+          { t: "Spam", sev: "m" },
+          { t: "Nachrichtenbombe", sev: "m" },
           { t: "Fake-Profil anlegen", sev: "s" },
         ],
       },
@@ -1389,6 +1413,7 @@
       selectedCategory: "verbal",
       selectedItem: null,
       selectedSeverity: null,
+      customItemDrafts: {},
       editingEntryId: null,
       selectedImpactItem: null,
       studentIdFallback: localStorage.getItem(STORAGE_STUDENT_ID) || "",
@@ -1679,13 +1704,20 @@
 
     function renderItems() {
       const category = CATEGORIES[state.selectedCategory];
+      const isCustomSelected = !!state.selectedItem && !category.items.some((item) => item.t === state.selectedItem);
+      const customDraft = state.customItemDrafts[state.selectedCategory] ?? (isCustomSelected ? state.selectedItem : "");
       $("itemList").innerHTML = category.items.map((item) => `
         <button type="button" class="itemBtn ${state.selectedItem === item.t ? "on" : ""}" data-item="${escapeHtml(item.t)}">
           <span class="itemPip" style="background:${category.color};"></span>
           <span>${escapeHtml(item.t)}</span>
           <span class="itemSev">${severityIcon(item.sev)} ${severityLabel(item.sev)}</span>
         </button>
-      `).join("");
+      `).join("") + `
+        <div class="itemCustomRow">
+          <input id="customItemInput" type="text" placeholder="Eigener Vorfall ..." value="${escapeHtml(customDraft)}" class="${isCustomSelected ? "itemCustomBtn active" : ""}" />
+          <button type="button" class="ghost itemCustomBtn ${isCustomSelected ? "active" : ""}" id="customItemBtn">OK</button>
+        </div>
+      `;
 
       document.querySelectorAll(".itemBtn").forEach((button) => {
         button.addEventListener("click", () => {
@@ -1699,6 +1731,35 @@
           renderFormInfo();
         });
       });
+
+      const customInput = $("customItemInput");
+      const activateCustomItem = () => {
+        const value = customInput.value.trim();
+        state.customItemDrafts[state.selectedCategory] = value;
+        if (!value) {
+          state.selectedItem = null;
+          state.selectedSeverity = null;
+        } else {
+          state.selectedItem = value;
+          if (!state.selectedSeverity) state.selectedSeverity = "m";
+        }
+        state.editingEntryId = null;
+        renderItems();
+        renderSeverityButtons();
+        renderReaction();
+        renderFormInfo();
+      };
+
+      customInput.addEventListener("input", () => {
+        state.customItemDrafts[state.selectedCategory] = customInput.value;
+      });
+      customInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          activateCustomItem();
+        }
+      });
+      $("customItemBtn").addEventListener("click", activateCustomItem);
     }
 
     function renderSeverityButtons() {
@@ -2057,6 +2118,9 @@
       state.selectedCategory = CATEGORIES[entry.category_key] ? entry.category_key : (fallback?.categoryKey || state.selectedCategory);
       state.selectedItem = entry.item_text;
       state.selectedSeverity = entry.severity;
+      if (!CATEGORIES[state.selectedCategory].items.some((item) => item.t === entry.item_text)) {
+        state.customItemDrafts[state.selectedCategory] = entry.item_text;
+      }
       $("noteInput").value = entry.note || "";
 
       renderCategories();
@@ -2068,6 +2132,9 @@
     }
 
     function resetForm() {
+      if (state.selectedCategory) {
+        state.customItemDrafts[state.selectedCategory] = "";
+      }
       state.editingEntryId = null;
       state.selectedItem = null;
       state.selectedSeverity = null;

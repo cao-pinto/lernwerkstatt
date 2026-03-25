@@ -348,6 +348,7 @@
 
       const { error } = await supabase.from("attempts").insert({
         student_id: studentId,
+        game: "math",
         mode: selectedMode,
         correct_count: right,
         wrong_count: wrong,
@@ -378,6 +379,8 @@
         .from("attempts")
         .select("mode,correct_count,wrong_count,total_count,accuracy,created_at")
         .eq("student_id", studentId)
+        .eq("mode", selectedMode)
+        .or("game.is.null,game.eq.math")
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -389,7 +392,7 @@
 
       const attempts = data || [];
       if (!attempts.length) {
-        $("statsBox").innerHTML = `<div class="muted">Noch keine Versuche gespeichert.</div>`;
+        $("statsBox").innerHTML = `<div class="muted">Noch keine Versuche für diesen Modus gespeichert.</div>`;
         $("historyBox").textContent = "—";
         return;
       }
@@ -404,6 +407,7 @@
           Bestwert richtig: <strong>${bestCorrect}</strong>
           &nbsp;|&nbsp; Beste Accuracy: <strong>${Math.round(bestAcc*100)}%</strong>
           &nbsp;|&nbsp; Ø Accuracy letzte 5: <strong>${Math.round(avgAcc5*100)}%</strong>
+          &nbsp;|&nbsp; Modus: <strong>${selectedMode === "small" ? "Kleines 1×1" : "Großes 1×1"}</strong>
         </div>
       `;
 
