@@ -291,7 +291,9 @@
     }
 
 
-    const MIN_TASK_VIEW_MS = 700;
+    const MIN_TASK_VIEW_MS = 900;
+    const MIN_INPUT_SETTLE_MS = 220;
+    const MIN_WRONG_ADVANCE_MS = 1800;
     const TASK_SUBMIT_LOCK_MS = 280;
 
     let studentId = null;
@@ -308,6 +310,8 @@
     let streak = 0;
     let questionNo = 0;
     let taskShownAt = 0;
+    let answerFirstEditedAt = 0;
+    let answerLastEditedAt = 0;
     let submitLocked = false;
 
     let currentTask = null;
@@ -496,6 +500,8 @@
       $("answer").disabled = false;
       $("okBtn").disabled = false;
       taskShownAt = Date.now();
+      answerFirstEditedAt = 0;
+      answerLastEditedAt = 0;
       submitLocked = false;
       $("answer").focus();
       renderHint(currentTask);
@@ -506,6 +512,14 @@
       if (submitLocked) return false;
       if ((Date.now() - taskShownAt) < MIN_TASK_VIEW_MS) {
         showMsg(fb, false, "⚠️ Bitte die Aufgabe kurz ansehen, bevor du bestätigst.");
+        return false;
+      }
+      if (!answerFirstEditedAt) {
+        showMsg(fb, false, "⚠️ Bitte gib zuerst eine Antwort ein.");
+        return false;
+      }
+      if ((Date.now() - answerLastEditedAt) < MIN_INPUT_SETTLE_MS) {
+        showMsg(fb, false, "⚠️ Bitte kurz warten und dann erst bestätigen.");
         return false;
       }
       submitLocked = true;
@@ -567,6 +581,7 @@
 
       const expected = currentTask.expected;
       const isRight = Math.abs(val - expected) < 1e-9;
+      const answeredAfterMs = Date.now() - taskShownAt;
 
       if (isRight) {
         right += 1;
@@ -574,6 +589,15 @@
         const bonusText = streak === 0 ? " + Bonuszeit!" : "";
         showMsg(fb, true, `✅ Richtig!${bonusText}`);
       } else {
+        if (answeredAfterMs < MIN_WRONG_ADVANCE_MS) {
+          submitLocked = false;
+          $("answer").disabled = false;
+          $("okBtn").disabled = false;
+          $("answer").focus();
+          $("answer").select();
+          showMsg(fb, false, "⚠️ Zu schnelle falsche Antworten zählen nicht als neue Aufgabe. Bitte rechne zuerst und versuche es noch einmal.");
+          return;
+        }
         wrong += 1;
         resetStreak();
         showMsg(fb, false, `❌ Falsch. Richtig wäre <strong>${toCommaString(expected)} ${currentTask.to.symbol}</strong>.`);
@@ -791,6 +815,11 @@
 
     $("startBtn").addEventListener("click", startRun);
     $("okBtn").addEventListener("click", check);
+    $("answer").addEventListener("input", () => {
+      const now = Date.now();
+      if (!answerFirstEditedAt) answerFirstEditedAt = now;
+      answerLastEditedAt = now;
+    });
     $("stopBtn").addEventListener("click", stop);
     $("answer").addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
